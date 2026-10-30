@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Голос Севы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one column up to 1440px — toolbar, the phrase × voice table (scrolls sideways), sandbox, then the method notes. */
+:root {
+  --paper: #f3f6f6;
+  --surface: #ffffff;
+  --ink: #142024;
+  --muted: #586a70;
+  --line: #d6e0e1;
+  --accent: #0a6875;
+  --accent-soft: #dbecee;
+  --on-accent: #ffffff;
+  --warn: #9a3412;
+  --head: #e8f0f1;
+  --line-strong: #a9bcc0;
+  --row-hover: #f6fafa;
+  --font-ui: "Onest", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0e1517; --surface: #141e21; --ink: #e2ebec; --muted: #93a4a8; --line: #26353a;
+    --accent: #52b9c7; --accent-soft: #17363c; --on-accent: #0a1315; --warn: #fb923c;
+    --head: #1a282c; --line-strong: #41575d; --row-hover: #18252a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 0.9375rem/1.55 var(--font-ui); }
+.page {
+  max-width: 1440px; margin: 0 auto; display: grid; gap: 40px;
+  padding-block: 32px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 650; }
+h1 { font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.01em; }
+h2 { font-size: 1.125rem; }
+h3 { font-size: 0.9375rem; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 1.25em; display: grid; gap: 4px; }
+.mono { font-family: var(--font-data); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { display: grid; gap: 16px; }
+header { display: grid; gap: 12px; max-width: 75ch; }
+.note { max-width: 75ch; font-size: 0.8125rem; color: var(--muted); }
+
+.toolbar {
+  display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+}
+.switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--paper); }
+.switch button {
+  font: 500 0.875rem var(--font-ui); color: var(--muted); background: none; border: 0;
+  border-radius: 999px; padding: 6px 16px; cursor: pointer;
+}
+.switch button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); }
+.speed { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--muted); }
+.speed input { width: 180px; max-width: 40vw; accent-color: var(--accent); }
+.speed-value { min-width: 5ch; font-family: var(--font-data); font-variant-numeric: tabular-nums; color: var(--ink); }
+select, textarea, .speed-reset, .btn {
+  font: 500 0.8125rem var(--font-ui); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+select { padding: 4px 6px; max-width: 100%; }
+.speed-reset, .btn { padding: 6px 10px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; padding: 8px 16px; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.section-head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.findings { display: grid; gap: 12px; max-width: 90ch; }
+.findings p { font-size: 0.9375rem; }
+.measures-wrap { overflow-x: auto; }
+.measures { border-collapse: collapse; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.measures th, .measures td { padding: 6px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.measures th:first-child, .measures td:first-child { text-align: left; }
+.measures thead th { font-weight: 600; color: var(--muted); border-bottom: 2px solid var(--line-strong); }
+.measures .down { color: var(--accent); font-weight: 600; }
+.measures .up { color: var(--warn); }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 20px; }
+.legend a { display: grid; gap: 2px; padding-top: 8px; border-top: 2px solid var(--accent); color: inherit; text-decoration: none; }
+.legend a[data-key="source"] { border-top-color: var(--muted); }
+.legend a span { font-size: 0.8125rem; color: var(--muted); }
+.legend a:hover strong { color: var(--accent); }
+
+/* Таблица фраз прокручивается в своей рамке в обе стороны: шапка с вариантами
+   и колонка с фразой стоят на месте, колонки разделены линиями, семейства — толще. */
+.matrix-wrap {
+  overflow: auto; max-height: calc(100vh - 32px); max-width: 100%;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface);
+}
+.matrix { border-collapse: separate; border-spacing: 0; min-width: 100%; }
+.matrix th, .matrix td {
+  padding: 10px 12px; text-align: left; vertical-align: middle;
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.matrix thead th {
+  position: sticky; top: 0; z-index: 3; vertical-align: bottom; min-width: 156px;
+  background: var(--head); border-bottom: 2px solid var(--line-strong);
+  font-size: 0.8125rem; font-weight: 650; line-height: 1.3;
+}
+.matrix thead .family {
+  display: block; margin-bottom: 4px; font-size: 0.6875rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+}
+.matrix .phrase-cell {
+  position: sticky; left: 0; z-index: 2; min-width: 250px; max-width: 290px;
+  background: var(--surface); border-right: 2px solid var(--line-strong); font-weight: 400;
+}
+.matrix thead th.phrase-cell { z-index: 4; background: var(--head); }
+.matrix .family-start { border-left: 2px solid var(--line-strong); }
+.matrix tr.group th {
+  padding: 0; background: var(--accent-soft); border-bottom: 1px solid var(--line-strong);
+}
+.group-inner {
+  position: sticky; left: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center;
+  width: max-content; max-width: 100vw; padding: 10px 12px;
+}
+.group-inner h3 { font-size: 0.875rem; }
+.matrix tbody tr.phrase-row:hover > * { background: var(--row-hover); }
+.matrix tr.is-current > .phrase-cell, .matrix thead th.is-current { background: var(--accent-soft); color: var(--accent); }
+.matrix thead th.is-current .family { color: var(--accent); }
+.phrase { display: grid; gap: 4px; min-width: 0; }
+.phrase .target { font-size: 1.0625rem; font-weight: 600; }
+.phrase .ru, .phrase .own-speed { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 0.8125rem; color: var(--muted); }
+.phrase .own-speed select { font-size: 0.75rem; padding: 2px 4px; color: var(--muted); }
+.cell { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; min-width: 0; }
+
+.play {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; justify-content: flex-start;
+  max-width: 100%; min-height: 36px; padding: 4px 12px; border-radius: 8px; cursor: pointer; text-align: left;
+  font: 500 0.8125rem var(--font-ui); font-variant-numeric: tabular-nums;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+}
+.play svg { width: 12px; height: 12px; flex: none; fill: currentColor; }
+.play .label { display: none; }
+.play.method { border-color: var(--accent); color: var(--accent); }
+.play.is-playing { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.play.mini { min-height: 26px; padding: 0 8px; font-size: 0.75rem; }
+.play .caption { color: var(--muted); }
+.play.is-playing .caption { color: inherit; }
+.takes {
+  min-height: 26px; padding: 0 8px; border-radius: 999px; cursor: pointer;
+  font: 500 0.75rem var(--font-data); color: var(--muted); background: var(--paper); border: 1px solid var(--line);
+}
+.takes.busy { color: var(--accent); border-color: var(--accent); }
+.empty { color: var(--muted); font-size: 0.8125rem; }
+.series { justify-content: center; background: var(--accent-soft); border-color: transparent; color: var(--ink); }
+:is(.play, .takes, .btn, .speed-reset, .switch button, select, textarea, summary, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+dialog {
+  width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 64px);
+  border: 1px solid var(--line); border-radius: 12px; padding: 0; background: var(--surface); color: var(--ink);
+}
+dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+.dialog-body { display: grid; gap: 16px; padding: 20px; }
+.dialog-head { display: flex; gap: 12px; justify-content: space-between; align-items: start; }
+.take-list { display: grid; gap: 8px; }
+.take {
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+}
+.take.picked { border-color: var(--accent); }
+.take .meta { font-size: 0.75rem; color: var(--muted); }
+.take .error { color: var(--warn); font-size: 0.75rem; overflow-wrap: anywhere; }
+.take label { display: inline-flex; gap: 6px; align-items: center; font-size: 0.75rem; color: var(--muted); }
+
+.sandbox-form { display: grid; gap: 12px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.sandbox-form textarea { width: 100%; min-height: 64px; padding: 8px 10px; font: 400 1rem var(--font-ui); resize: vertical; }
+.form-row { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.checks label { display: inline-flex; gap: 6px; align-items: center; font-size: 0.8125rem; }
+.runs { display: grid; gap: 12px; }
+.run { display: grid; gap: 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.run-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.run-text { font-size: 1.0625rem; font-weight: 600; }
+.run-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px 12px; }
+.run-item { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.run-item .name { font-size: 0.75rem; color: var(--muted); }
+.run-item .error { color: var(--warn); font-size: 0.75rem; overflow-wrap: anywhere; }
+.status { font-size: 0.8125rem; color: var(--muted); }
+.status.error { color: var(--warn); }
+
+.methods { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.method-card {
+  display: grid; gap: 10px; align-content: start; padding: 16px; scroll-margin-top: 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0;
+}
+.method-card ol { font-size: 0.875rem; }
+.method-card .facts { font-size: 0.75rem; color: var(--muted); display: grid; gap: 2px; }
+.method-card audio { width: 100%; height: 36px; }
+.method-card .listen { display: grid; gap: 4px; }
+.method-card .listen span { font-size: 0.75rem; color: var(--muted); }
+.limits { display: grid; gap: 8px; max-width: 75ch; font-size: 0.875rem; }
+details { max-width: 75ch; }
+summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+details p { margin-top: 8px; }
+footer { display: grid; gap: 4px; color: var(--muted); font-size: 0.8125rem; overflow-wrap: anywhere; }
+
+/* На телефоне — карточка фразы с подписанными кнопками, без прокрутки вбок. */
+@media (max-width: 760px) {
+  .matrix .phrase-cell { min-width: 170px; max-width: 200px; }
+  .matrix thead th { min-width: 120px; }
+  .methods { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .play { transition: background-color 120ms ease, color 120ms ease; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <span class="eyebrow">Стенд для специалиста</span>
+    <h1>Голос Севы: возраст и акцент</h1>
+    <p id="intro">Два вопроса о голосе Севы. «Голос старше» — можно ли подвинуть нынешний клон ниже и взрослее без новой записи. «Акцент» — одни и те же фразы книги «Я» на английском и испанском, полученные разными способами. Любую фразу можно перегенерировать любым способом: прошлые дубли сохраняются, и видно, держится ли результат или удачный дубль был случайностью. Внизу — песочница для своей фразы и подробное описание каждого способа.</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="speed">
+      <label for="speed-global">Общая скорость</label>
+      <input type="range" id="speed-global" min="0.5" max="1.5" step="0.05">
+      <output class="speed-value" for="speed-global" id="speed-global-value"></output>
+      <button type="button" class="speed-reset" id="speed-global-reset">0,80×</button>
+    </div>
+    <p class="note">У раздела и у отдельной фразы можно выставить свою скорость, иначе действует общая. Высота голоса при этом не меняется — так же работает atempo в настройках книг.</p>
+  </div>
+
+  <section aria-labelledby="older-title" id="older">
+    <div class="section-head">
+      <h2 id="older-title">Голос старше</h2>
+      <div class="switch" role="tablist" aria-label="Язык раздела «Голос старше»" id="older-switch"></div>
+    </div>
+    <p class="note">Голос Севы в последнее время сильно меняется, и клон от 24.07 уже звучит не так, как сам Сева. Здесь — попытки подвинуть нынешний клон без новой записи: ремиксы ElevenLabs и простая обработка тона. Решить нужно одно: годится ли что-то из этого или проще записать Севу заново и сделать новый клон.</p>
+    <div class="findings" id="older-findings"></div>
+    <div class="matrix-wrap" id="older-grid"></div>
+    <h3>Как получен каждый вариант</h3>
+    <div class="methods" id="older-methods"></div>
+    <div class="limits" id="older-blocked"></div>
+  </section>
+
+  <section aria-labelledby="legend-title">
+    <div class="section-head">
+      <h2 id="legend-title">Акцент: варианты</h2>
+      <div class="switch" role="tablist" aria-label="Язык раздела «Акцент»" id="switch"></div>
+    </div>
+    <nav class="legend" id="legend"></nav>
+  </section>
+
+  <section aria-labelledby="phrases-title">
+    <h2 id="phrases-title">Акцент: фразы книги</h2>
+    <p class="note" id="phrases-note">Кнопка ▶ играет выбранный дубль. Счётчик рядом — сколько дублей у ячейки: в нём можно послушать каждый, выбрать, какой играет в таблице, и сделать ещё один. «Подряд» проигрывает все варианты строки.</p>
+    <div class="matrix-wrap" id="grid"></div>
+  </section>
+
+  <section aria-labelledby="sandbox-title" id="sandbox">
+    <h2 id="sandbox-title">Песочница</h2>
+    <form class="sandbox-form" id="sandbox-form">
+      <label for="sandbox-text" class="eyebrow">Фраза</label>
+      <textarea id="sandbox-text" required placeholder="Например: Seva, say: I like apples."></textarea>
+      <div class="form-row">
+        <label class="speed" for="sandbox-lang">Язык
+          <select id="sandbox-lang"></select>
+        </label>
+        <span class="status" id="sandbox-count"></span>
+      </div>
+      <div class="checks" id="sandbox-variants"></div>
+      <div class="form-row">
+        <button type="submit" class="btn primary" id="sandbox-submit">Озвучить</button>
+        <span class="status" id="sandbox-status" role="status"></span>
+      </div>
+    </form>
+    <div class="runs" id="runs"></div>
+  </section>
+
+  <section aria-labelledby="methods-title">
+    <h2 id="methods-title">Как получен каждый вариант</h2>
+    <p class="note" id="methods-common"></p>
+    <div class="methods" id="methods"></div>
+    <details id="reference"><summary>Текст ~30 с, по которому делались клоны «Прочитал» и «Носитель»</summary><p></p></details>
+  </section>
+
+  <section aria-labelledby="limits-title">
+    <h2 id="limits-title">Чего в стенде нет и почему</h2>
+    <div class="limits">
+      <p><strong>Ремикс голоса ElevenLabs</strong> («тот же голос, родной акцент») и <strong>Voice Design</strong> (голос мальчика-носителя по описанию): ElevenLabs отклоняет оба запроса (403 blocked_generation) — правила сервиса запрещают создавать детский голос по описанию.</p>
+      <p><strong>Клон в OpenAI</strong>: в правилах custom voices сказано «Children's voices aren't allowed», а сама функция открыта только одобренным клиентам. Поэтому OpenAI здесь только читает фразу как носитель.</p>
+      <p><strong>Отдельный параметр для аргентинского испанского</strong>: его нет ни у ElevenLabs (language_code «es-AR» API отклоняет: «Model 'eleven_v4' does not support language_code 'es-AR'»), ни у Mistral. Аргентинское звучание задают голос, тексты (vos, sos, llamás, vivís) и тег акцента.</p>
+      <p><strong>Клоны через OpenRouter</strong>: клонировать там умеют Fish Audio (условия запрещают присылать данные детей до 13 лет и разрешают обучать модели на контенте), HeyGen (возрастная политика) и ByteDance Seed (правил про детей не нашли). Голос Севы туда не отправлялся.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="checks-title">
+    <h2 id="checks-title">Как проверяли</h2>
+    <div class="limits">
+      <p>Что каждый файл озвучен своим голосом — сверено с историей генераций ElevenLabs по каждому voice_id: все 56 файлов первого прогона совпали по звуку со «своими» генерациями.</p>
+      <p>Что тег акцента не произносится вслух и что фраза разборчива — распознаванием речи gpt-4o-transcribe. Распознавание слышит фразу, а не акцент: оценку произношения даёт только слух.</p>
+      <p>Высота голоса — медиана основного тона по всем фразам: у клона Севы в английском ≈327 Гц, в испанском ≈267 Гц; у переносов ≈250 Гц, поэтому есть вариант «тон Севы».</p>
+    </div>
+  </section>
+
+  <footer id="footer"></footer>
+</main>
+
+<dialog id="takes-dialog" aria-labelledby="takes-title">
+  <div class="dialog-body">
+    <div class="dialog-head">
+      <div>
+        <h2 id="takes-title"></h2>
+        <p class="muted" id="takes-phrase"></p>
+      </div>
+      <button type="button" class="btn" id="takes-close">Закрыть</button>
+    </div>
+    <div class="take-list" id="takes-list"></div>
+    <div class="form-row">
+      <button type="button" class="btn primary" id="takes-new">Сгенерировать ещё дубль</button>
+      <span class="status" id="takes-status" role="status"></span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const DATA = {"languages": [{"code": "en", "title": "English", "accent_tag": "[American accent]", "native": {"voice_id": "cgSgspJ2msm6clMCkdW9", "name": "Jessica", "about": "готовый голос ElevenLabs, американский английский"}, "pitch": {"openai-sts-pitch": 1.33, "openai-male-sts-pitch": 1.29}, "openai_instructions": "Speak as a native speaker of American English with a clear, natural General American accent. Cheerful and friendly, calm pace, simple clear pronunciation.", "variants": ["source", "tag", "tts", "sts", "voxtral-seva", "voxtral-native", "native-sts", "openai-sts", "openai-male-sts", "openai-sts-pitch", "openai-male-sts-pitch"], "reference_text": "Hi! My name is Seva. Today I want to tell you about my favorite day. In the morning I wake up early, eat pancakes with my mom, and look out the window. If the weather is nice, we go to the park. I love the swings, the big red slide, and the little ducks on the pond. Sometimes I count them: one, two, three, four, five! Then we walk home, read a book together, and I tell my dad everything. What's your favorite day? Do you want to play with me?"}, {"code": "es-AR", "title": "Español (AR)", "accent_tag": "[Argentine accent]", "native": {"voice_id": "p7AwDmKvTdoHTBuueGvP", "name": "Malena", "about": "библиотека ElevenLabs, риоплатский испанский"}, "pitch": {"openai-sts-pitch": 1.05, "openai-male-sts-pitch": 1.1}, "openai_instructions": "Speak as a native speaker from Buenos Aires, Argentina, in Rioplatense Spanish with a natural porteño accent: pronounce 'll' and 'y' as 'sh' (sheísmo) and use Argentine intonation. Cheerful and friendly, calm pace, simple clear pronunciation.", "variants": ["source", "tag", "tts", "sts", "voxtral-seva", "voxtral-native", "native-sts", "openai-sts", "openai-male-sts", "openai-sts-pitch", "openai-male-sts-pitch"], "reference_text": "¡Hola! Me llamo Seva. Hoy te quiero contar cómo es mi día favorito. A la mañana me levanto temprano, desayuno medialunas con mi mamá y miro por la ventana. Si hace lindo, vamos a la plaza. Me encantan las hamacas, el tobogán grande y los patitos del lago. A veces los cuento: uno, dos, tres, cuatro, cinco. Después volvemos caminando por la calle, leemos un libro juntos y yo le cuento todo a mi papá. ¿Y vos? ¿Cuál es tu día favorito? ¿Querés jugar conmigo?"}, {"code": "ru", "title": "Русский", "accent_tag": "", "native": null, "pitch": {}, "openai_instructions": "Speak as a native Russian speaker with natural, clear Russian pronunciation. Cheerful and friendly, calm pace.", "variants": ["source", "voxtral-seva", "openai-sts", "openai-male-sts"], "reference_text": ""}], "variants": [{"key": "source", "title": "Исходный", "family": "Клон ElevenLabs"}, {"key": "tag", "title": "С тегом", "family": "Клон ElevenLabs"}, {"key": "tts", "title": "Прочитал", "family": "Клон ElevenLabs"}, {"key": "sts", "title": "Носитель", "family": "Клон ElevenLabs"}, {"key": "voxtral-seva", "title": "Voxtral: Сева", "family": "Mistral Voxtral"}, {"key": "voxtral-native", "title": "Voxtral: носитель", "family": "Mistral Voxtral"}, {"key": "native-sts", "title": "Перенос: носитель", "family": "Перенос тембра", "raw": true}, {"key": "openai-sts", "title": "Перенос: OpenAI", "family": "Перенос тембра", "raw": true}, {"key": "openai-male-sts", "title": "Перенос: OpenAI, муж.", "family": "Перенос тембра", "raw": true}, {"key": "openai-sts-pitch", "title": "OpenAI, тон Севы", "family": "Перенос + тон Севы", "raw": true}, {"key": "openai-male-sts-pitch", "title": "OpenAI муж., тон Севы", "family": "Перенос + тон Севы", "raw": true}], "phrases": [{"key": "001_word_i", "group": "word", "texts": {"ru": "я", "en": "I", "es-AR": "yo"}}, {"key": "002_word_me_accusative", "group": "word", "texts": {"ru": "меня", "en": "me", "es-AR": "me"}}, {"key": "016_phrase_this_is_me", "group": "phrase", "texts": {"ru": "Это я.", "en": "This is me.", "es-AR": "Este soy yo."}}, {"key": "017_phrase_my_name", "group": "phrase", "texts": {"ru": "Меня зовут Сева.", "en": "My name is Seva.", "es-AR": "Me llamo Seva."}}, {"key": "023_phrase_i_am_from", "group": "phrase", "texts": {"ru": "Я из Аргентины.", "en": "I am from Argentina.", "es-AR": "Soy de Argentina."}}, {"key": "025_question_what_is_your_name", "group": "question", "texts": {"ru": "Как тебя зовут?", "en": "What is your name?", "es-AR": "¿Cómo te llamás?"}}, {"key": "029_question_where_do_you_live", "group": "question", "texts": {"ru": "Где ты живёшь?", "en": "Where do you live?", "es-AR": "¿Dónde vivís?"}}, {"key": "030_question_where_are_you_from", "group": "question", "texts": {"ru": "Откуда ты?", "en": "Where are you from?", "es-AR": "¿De dónde sos?"}}, {"key": "invite_say", "group": "prompt", "texts": {"ru": "Сева, скажи:", "en": "Seva, say:", "es-AR": "Seva, decí:"}}, {"key": "invite_ask", "group": "prompt", "texts": {"ru": "Сева, спроси:", "en": "Seva, ask:", "es-AR": "Seva, preguntá:"}}, {"key": "019_phrase_my_full_name", "group": "phrase", "texts": {"ru": "Мои полные имя и фамилия — Всеволод Стефанюк.", "en": "My full name is Vsevolod Stefanyuk.", "es-AR": "Mi nombre completo y apellido son Vsevolod Stefanyuk."}}, {"key": "yo_me_llamo", "group": "phrase", "texts": {"ru": "Меня зовут Сева.", "es-AR": "Yo me llamo Seva."}}, {"key": "story_park", "group": "story", "texts": {"ru": "Привет! Меня зовут Сева. Сегодня мы с мамой гуляли в парке, кормили уток и катались на качелях.", "en": "Hi! My name is Seva. Today my mom and I walked in the park, fed the ducks and played on the swings.", "es-AR": "¡Hola! Me llamo Seva. Hoy con mi mamá paseamos por la plaza, les dimos de comer a los patos y jugamos en las hamacas."}}], "takes": {"001_word_i": {"ru": {"source": [{"n": 1, "src": "takes/001_word_i/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:38+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.6}], "older-2": [{"n": 1, "src": "takes/001_word_i/ru/older-2-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:29:20+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/001_word_i/ru/older-2-lower-1.mp3", "raw": null, "seconds": 0.6, "created": "2026-10-30T16:29:21+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/001_word_i/ru/lower-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:29:21+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/001_word_i/ru/pitch-down-1.mp3", "raw": "takes/001_word_i/ru/pitch-down-1-raw.mp3", "seconds": 0.6, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/001_word_i/ru/deeper-1.mp3", "raw": "takes/001_word_i/ru/deeper-1-raw.mp3", "seconds": 0.6, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/001_word_i/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 0.7, "created": "2026-10-30T16:31:35+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/001_word_i/ru/lower-medium-1.mp3", "raw": null, "seconds": 0.6, "created": "2026-10-30T16:31:35+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/001_word_i/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:38+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "tag": [{"n": 1, "src": "takes/001_word_i/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:23+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "tts": [{"n": 1, "src": "takes/001_word_i/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:40+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.6}], "sts": [{"n": 1, "src": "takes/001_word_i/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:51+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.8}], "voxtral-seva": [{"n": 1, "src": "takes/001_word_i/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:06+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.4}], "voxtral-native": [{"n": 1, "src": "takes/001_word_i/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:28:56+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "native-sts": [{"n": 1, "src": "takes/001_word_i/en/native-sts-1.mp3", "raw": "takes/001_word_i/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:46:50+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "openai-sts": [{"n": 1, "src": "takes/001_word_i/en/openai-sts-1.mp3", "raw": "takes/001_word_i/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:46:57+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.0}], "openai-male-sts": [{"n": 1, "src": "takes/001_word_i/en/openai-male-sts-1.mp3", "raw": "takes/001_word_i/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:24+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.5}], "openai-sts-pitch": [{"n": 1, "src": "takes/001_word_i/en/openai-sts-pitch-1.mp3", "raw": "takes/001_word_i/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:06+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.0}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/001_word_i/en/openai-male-sts-pitch-1.mp3", "raw": "takes/001_word_i/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:10+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.5}], "older-2": [{"n": 1, "src": "takes/001_word_i/en/older-2-1.mp3", "raw": null, "seconds": 0.6, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/001_word_i/en/older-2-lower-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/001_word_i/en/lower-1.mp3", "raw": null, "seconds": 0.6, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/001_word_i/en/pitch-down-1.mp3", "raw": "takes/001_word_i/en/pitch-down-1-raw.mp3", "seconds": 0.7, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/001_word_i/en/deeper-1.mp3", "raw": "takes/001_word_i/en/deeper-1-raw.mp3", "seconds": 0.7, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/001_word_i/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 0.6, "created": "2026-10-30T16:31:35+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/001_word_i/en/lower-medium-1.mp3", "raw": null, "seconds": 0.6, "created": "2026-10-30T16:31:35+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/001_word_i/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.9}], "tag": [{"n": 1, "src": "takes/001_word_i/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:23+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "tts": [{"n": 1, "src": "takes/001_word_i/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:41+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "sts": [{"n": 1, "src": "takes/001_word_i/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:50+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.6}], "voxtral-seva": [{"n": 1, "src": "takes/001_word_i/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:06+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.5}], "voxtral-native": [{"n": 1, "src": "takes/001_word_i/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:06+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.5}], "native-sts": [{"n": 1, "src": "takes/001_word_i/es-AR/native-sts-1.mp3", "raw": "takes/001_word_i/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:46:50+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "openai-sts": [{"n": 1, "src": "takes/001_word_i/es-AR/openai-sts-1.mp3", "raw": "takes/001_word_i/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:46:52+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "openai-male-sts": [{"n": 1, "src": "takes/001_word_i/es-AR/openai-male-sts-1.mp3", "raw": "takes/001_word_i/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:29+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "openai-sts-pitch": [{"n": 1, "src": "takes/001_word_i/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/001_word_i/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/001_word_i/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/001_word_i/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "older-2": [{"n": 1, "src": "takes/001_word_i/es-AR/older-2-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/001_word_i/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:29:22+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/001_word_i/es-AR/lower-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:29:23+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/001_word_i/es-AR/pitch-down-1.mp3", "raw": "takes/001_word_i/es-AR/pitch-down-1-raw.mp3", "seconds": 0.9, "created": "2026-10-30T16:29:23+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/001_word_i/es-AR/deeper-1.mp3", "raw": "takes/001_word_i/es-AR/deeper-1-raw.mp3", "seconds": 0.9, "created": "2026-10-30T16:29:23+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/001_word_i/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:31:35+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/001_word_i/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:31:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "002_word_me_accusative": {"ru": {"source": [{"n": 1, "src": "takes/002_word_me_accusative/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.8}], "older-2": [{"n": 1, "src": "takes/002_word_me_accusative/ru/older-2-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:29:23+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/002_word_me_accusative/ru/older-2-lower-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:29:23+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/002_word_me_accusative/ru/lower-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-10-30T16:29:24+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/002_word_me_accusative/ru/pitch-down-1.mp3", "raw": "takes/002_word_me_accusative/ru/pitch-down-1-raw.mp3", "seconds": 0.8, "created": "2026-10-30T16:29:24+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/002_word_me_accusative/ru/deeper-1.mp3", "raw": "takes/002_word_me_accusative/ru/deeper-1-raw.mp3", "seconds": 0.8, "created": "2026-10-30T16:29:24+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/002_word_me_accusative/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:31:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/002_word_me_accusative/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-10-30T16:31:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/002_word_me_accusative/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:40+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.6}], "tag": [{"n": 1, "src": "takes/002_word_me_accusative/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:23+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "tts": [{"n": 1, "src": "takes/002_word_me_accusative/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:41+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "sts": [{"n": 1, "src": "takes/002_word_me_accusative/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:51+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.8}], "voxtral-seva": [{"n": 1, "src": "takes/002_word_me_accusative/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.6}], "voxtral-native": [{"n": 1, "src": "takes/002_word_me_accusative/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:28:58+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.4}], "native-sts": [{"n": 1, "src": "takes/002_word_me_accusative/en/native-sts-1.mp3", "raw": "takes/002_word_me_accusative/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:46:52+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "openai-sts": [{"n": 1, "src": "takes/002_word_me_accusative/en/openai-sts-1.mp3", "raw": "takes/002_word_me_accusative/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:46:54+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts": [{"n": 1, "src": "takes/002_word_me_accusative/en/openai-male-sts-1.mp3", "raw": "takes/002_word_me_accusative/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:24+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.9}], "openai-sts-pitch": [{"n": 1, "src": "takes/002_word_me_accusative/en/openai-sts-pitch-1.mp3", "raw": "takes/002_word_me_accusative/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:06+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/002_word_me_accusative/en/openai-male-sts-pitch-1.mp3", "raw": "takes/002_word_me_accusative/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:10+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.9}], "older-2": [{"n": 1, "src": "takes/002_word_me_accusative/en/older-2-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:29:24+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/002_word_me_accusative/en/older-2-lower-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:29:25+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/002_word_me_accusative/en/lower-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:29:25+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/002_word_me_accusative/en/pitch-down-1.mp3", "raw": "takes/002_word_me_accusative/en/pitch-down-1-raw.mp3", "seconds": 0.6, "created": "2026-10-30T16:29:25+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/002_word_me_accusative/en/deeper-1.mp3", "raw": "takes/002_word_me_accusative/en/deeper-1-raw.mp3", "seconds": 0.6, "created": "2026-10-30T16:29:25+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/002_word_me_accusative/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 0.7, "created": "2026-10-30T16:31:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/002_word_me_accusative/en/lower-medium-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:31:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:41+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "tag": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:24+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "tts": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:41+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "sts": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:51+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "voxtral-seva": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.5}], "voxtral-native": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.6}], "native-sts": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/native-sts-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:46:54+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.7}], "openai-sts": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/openai-sts-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:46:56+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "openai-male-sts": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/openai-male-sts-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:32+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.9}], "openai-sts-pitch": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.9}], "older-2": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/older-2-1.mp3", "raw": null, "seconds": 0.7, "created": "2026-10-30T16:29:25+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:29:25+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/lower-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:29:25+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/pitch-down-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/pitch-down-1-raw.mp3", "seconds": 0.7, "created": "2026-10-30T16:29:26+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/deeper-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/deeper-1-raw.mp3", "seconds": 0.7, "created": "2026-10-30T16:29:26+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-10-30T16:31:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-10-30T16:31:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "016_phrase_this_is_me": {"ru": {"source": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:42+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "older-2": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/older-2-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-10-30T16:29:26+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-10-30T16:29:26+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/lower-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-10-30T16:29:26+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/pitch-down-1.mp3", "raw": "takes/016_phrase_this_is_me/ru/pitch-down-1-raw.mp3", "seconds": 1.1, "created": "2026-10-30T16:29:26+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/deeper-1.mp3", "raw": "takes/016_phrase_this_is_me/ru/deeper-1-raw.mp3", "seconds": 1.1, "created": "2026-10-30T16:29:27+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-10-30T16:31:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-10-30T16:31:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:42+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "tag": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:24+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "tts": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:42+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:51+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "voxtral-seva": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:08+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "voxtral-native": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:28:59+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "native-sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/native-sts-1.mp3", "raw": "takes/016_phrase_this_is_me/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:46:56+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "openai-sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/openai-sts-1.mp3", "raw": "takes/016_phrase_this_is_me/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:46:58+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "openai-male-sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/openai-male-sts-1.mp3", "raw": "takes/016_phrase_this_is_me/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:26+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "openai-sts-pitch": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/openai-sts-pitch-1.mp3", "raw": "takes/016_phrase_this_is_me/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:06+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/openai-male-sts-pitch-1.mp3", "raw": "takes/016_phrase_this_is_me/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:10+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "older-2": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/older-2-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:27+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.2, "created": "2026-10-30T16:29:27+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:28+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/pitch-down-1.mp3", "raw": "takes/016_phrase_this_is_me/en/pitch-down-1-raw.mp3", "seconds": 1.4, "created": "2026-10-30T16:29:28+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/deeper-1.mp3", "raw": "takes/016_phrase_this_is_me/en/deeper-1-raw.mp3", "seconds": 1.4, "created": "2026-10-30T16:29:28+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:31:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:39+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:43+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "tag": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:24+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "tts": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:43+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:52+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "voxtral-seva": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:09+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.4}], "voxtral-native": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:08+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "native-sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/native-sts-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:46:59+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "openai-sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/openai-sts-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:00+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/openai-male-sts-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:29+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "openai-sts-pitch": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "older-2": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:28+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:29+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:29+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/pitch-down-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/pitch-down-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:29+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/deeper-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/deeper-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:29+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:39+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:39+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "017_phrase_my_name": {"ru": {"source": [{"n": 1, "src": "takes/017_phrase_my_name/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:43+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "older-2": [{"n": 1, "src": "takes/017_phrase_my_name/ru/older-2-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:30+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/017_phrase_my_name/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:30+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/017_phrase_my_name/ru/lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:30+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/017_phrase_my_name/ru/pitch-down-1.mp3", "raw": "takes/017_phrase_my_name/ru/pitch-down-1-raw.mp3", "seconds": 1.7, "created": "2026-10-30T16:29:30+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/017_phrase_my_name/ru/deeper-1.mp3", "raw": "takes/017_phrase_my_name/ru/deeper-1-raw.mp3", "seconds": 1.7, "created": "2026-10-30T16:29:30+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/017_phrase_my_name/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:40+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/017_phrase_my_name/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:40+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/017_phrase_my_name/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:44+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "tag": [{"n": 1, "src": "takes/017_phrase_my_name/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:25+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "tts": [{"n": 1, "src": "takes/017_phrase_my_name/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:43+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "sts": [{"n": 1, "src": "takes/017_phrase_my_name/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:52+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "voxtral-seva": [{"n": 1, "src": "takes/017_phrase_my_name/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:09+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.9}], "voxtral-native": [{"n": 1, "src": "takes/017_phrase_my_name/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:00+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "native-sts": [{"n": 1, "src": "takes/017_phrase_my_name/en/native-sts-1.mp3", "raw": "takes/017_phrase_my_name/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:00+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "openai-sts": [{"n": 1, "src": "takes/017_phrase_my_name/en/openai-sts-1.mp3", "raw": "takes/017_phrase_my_name/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "openai-male-sts": [{"n": 1, "src": "takes/017_phrase_my_name/en/openai-male-sts-1.mp3", "raw": "takes/017_phrase_my_name/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:31+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "openai-sts-pitch": [{"n": 1, "src": "takes/017_phrase_my_name/en/openai-sts-pitch-1.mp3", "raw": "takes/017_phrase_my_name/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}, {"n": 2, "src": "takes/017_phrase_my_name/en/openai-sts-pitch-2.mp3", "raw": "takes/017_phrase_my_name/en/openai-sts-pitch-2-raw.mp3", "created": "2026-10-23T10:52:13+00:00", "origin": "перегенерация", "status": "done", "seconds": 2.0}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/017_phrase_my_name/en/openai-male-sts-pitch-1.mp3", "raw": "takes/017_phrase_my_name/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:10+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "older-2": [{"n": 1, "src": "takes/017_phrase_my_name/en/older-2-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:31+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/017_phrase_my_name/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:31+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/017_phrase_my_name/en/lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:31+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/017_phrase_my_name/en/pitch-down-1.mp3", "raw": "takes/017_phrase_my_name/en/pitch-down-1-raw.mp3", "seconds": 1.9, "created": "2026-10-30T16:29:31+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/017_phrase_my_name/en/deeper-1.mp3", "raw": "takes/017_phrase_my_name/en/deeper-1-raw.mp3", "seconds": 1.9, "created": "2026-10-30T16:29:31+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/017_phrase_my_name/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:40+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/017_phrase_my_name/en/lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:44+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "tag": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:25+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "tts": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:44+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "sts": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:52+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "voxtral-seva": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:09+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "voxtral-native": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:10+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "native-sts": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/native-sts-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:02+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "openai-sts": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/openai-sts-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:03+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.1}], "openai-male-sts": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/openai-male-sts-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:31+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "openai-sts-pitch": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.1}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "older-2": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:32+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:32+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/lower-1.mp3", "raw": null, "seconds": 1.5, "created": "2026-10-30T16:29:32+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/pitch-down-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/pitch-down-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:32+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/deeper-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/deeper-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:32+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.5, "created": "2026-10-30T16:31:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "023_phrase_i_am_from": {"ru": {"source": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:45+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "older-2": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/older-2-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:34+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:35+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/pitch-down-1.mp3", "raw": "takes/023_phrase_i_am_from/ru/pitch-down-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/deeper-1.mp3", "raw": "takes/023_phrase_i_am_from/ru/deeper-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:45+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "tag": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:25+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "tts": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:45+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:53+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "voxtral-seva": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "voxtral-native": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:02+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "native-sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/native-sts-1.mp3", "raw": "takes/023_phrase_i_am_from/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:04+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "openai-sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/openai-sts-1.mp3", "raw": "takes/023_phrase_i_am_from/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:09+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/openai-male-sts-1.mp3", "raw": "takes/023_phrase_i_am_from/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:33+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.7}], "openai-sts-pitch": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/openai-sts-pitch-1.mp3", "raw": "takes/023_phrase_i_am_from/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/openai-male-sts-pitch-1.mp3", "raw": "takes/023_phrase_i_am_from/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:10+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.7}], "older-2": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/older-2-1.mp3", "raw": null, "seconds": 1.9, "created": "2026-10-30T16:29:36+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.9, "created": "2026-10-30T16:29:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/lower-1.mp3", "raw": null, "seconds": 1.9, "created": "2026-10-30T16:29:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/pitch-down-1.mp3", "raw": "takes/023_phrase_i_am_from/en/pitch-down-1-raw.mp3", "seconds": 2.0, "created": "2026-10-30T16:29:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/deeper-1.mp3", "raw": "takes/023_phrase_i_am_from/en/deeper-1-raw.mp3", "seconds": 2.0, "created": "2026-10-30T16:29:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/lower-medium-1.mp3", "raw": null, "seconds": 1.9, "created": "2026-10-30T16:31:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:46+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "tag": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:26+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "tts": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:46+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:53+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "voxtral-seva": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "voxtral-native": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "native-sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/native-sts-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:06+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "openai-sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/openai-sts-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:08+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "openai-male-sts": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/openai-male-sts-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:34+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "openai-sts-pitch": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "older-2": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:37+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/lower-1.mp3", "raw": null, "seconds": 1.5, "created": "2026-10-30T16:29:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/pitch-down-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/pitch-down-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/deeper-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/deeper-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.5, "created": "2026-10-30T16:31:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "025_question_what_is_your_name": {"ru": {"source": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:46+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "older-2": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/older-2-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:38+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:40+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:40+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/pitch-down-1.mp3", "raw": "takes/025_question_what_is_your_name/ru/pitch-down-1-raw.mp3", "seconds": 1.4, "created": "2026-10-30T16:29:40+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/deeper-1.mp3", "raw": "takes/025_question_what_is_your_name/ru/deeper-1-raw.mp3", "seconds": 1.4, "created": "2026-10-30T16:29:40+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:31:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:46+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "tag": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:26+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "tts": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:47+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:53+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "voxtral-seva": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:12+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "voxtral-native": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:04+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "native-sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/native-sts-1.mp3", "raw": "takes/025_question_what_is_your_name/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:10+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}, {"n": 2, "src": "takes/025_question_what_is_your_name/en/native-sts-2.mp3", "raw": "takes/025_question_what_is_your_name/en/native-sts-2-raw.mp3", "created": "2026-10-23T10:55:59+00:00", "origin": "перегенерация", "status": "done", "seconds": 1.3}], "openai-sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/openai-sts-1.mp3", "raw": "takes/025_question_what_is_your_name/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.0}], "openai-male-sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/openai-male-sts-1.mp3", "raw": "takes/025_question_what_is_your_name/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:35+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.4}], "openai-sts-pitch": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/openai-sts-pitch-1.mp3", "raw": "takes/025_question_what_is_your_name/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.0}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/openai-male-sts-pitch-1.mp3", "raw": "takes/025_question_what_is_your_name/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.4}], "older-2": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/older-2-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/pitch-down-1.mp3", "raw": "takes/025_question_what_is_your_name/en/pitch-down-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/deeper-1.mp3", "raw": "takes/025_question_what_is_your_name/en/deeper-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:41+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:47+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "tag": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:26+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "tts": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:47+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:54+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "voxtral-seva": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:13+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "voxtral-native": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:13+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "native-sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/native-sts-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:12+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "openai-sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/openai-sts-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:12+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "openai-male-sts": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/openai-male-sts-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:36+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "openai-sts-pitch": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "older-2": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/lower-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/pitch-down-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/pitch-down-1-raw.mp3", "seconds": 1.3, "created": "2026-10-30T16:29:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/deeper-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/deeper-1-raw.mp3", "seconds": 1.3, "created": "2026-10-30T16:29:42+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:31:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "029_question_where_do_you_live": {"ru": {"source": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:48+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "older-2": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/older-2-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/pitch-down-1.mp3", "raw": "takes/029_question_where_do_you_live/ru/pitch-down-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/deeper-1.mp3", "raw": "takes/029_question_where_do_you_live/ru/deeper-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:43+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:46+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.5, "created": "2026-10-30T16:31:46+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:48+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "tag": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:27+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "tts": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:48+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:54+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "voxtral-seva": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "voxtral-native": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:05+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "native-sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/native-sts-1.mp3", "raw": "takes/029_question_where_do_you_live/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:13+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "openai-sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/openai-sts-1.mp3", "raw": "takes/029_question_where_do_you_live/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/openai-male-sts-1.mp3", "raw": "takes/029_question_where_do_you_live/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:36+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "openai-sts-pitch": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/openai-sts-pitch-1.mp3", "raw": "takes/029_question_where_do_you_live/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/openai-male-sts-pitch-1.mp3", "raw": "takes/029_question_where_do_you_live/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "older-2": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/older-2-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/pitch-down-1.mp3", "raw": "takes/029_question_where_do_you_live/en/pitch-down-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/deeper-1.mp3", "raw": "takes/029_question_where_do_you_live/en/deeper-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:44+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:46+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:47+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:49+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "tag": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:27+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "tts": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:49+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:54+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "voxtral-seva": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "voxtral-native": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "native-sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/native-sts-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:14+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "openai-sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/openai-sts-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "openai-male-sts": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/openai-male-sts-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:37+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "openai-sts-pitch": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "older-2": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/lower-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/pitch-down-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/pitch-down-1-raw.mp3", "seconds": 1.3, "created": "2026-10-30T16:29:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/deeper-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/deeper-1-raw.mp3", "seconds": 1.3, "created": "2026-10-30T16:29:45+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:47+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:47+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "030_question_where_are_you_from": {"ru": {"source": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:49+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "older-2": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/older-2-1.mp3", "raw": null, "seconds": 1.2, "created": "2026-10-30T16:29:46+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.2, "created": "2026-10-30T16:29:46+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/lower-1.mp3", "raw": null, "seconds": 1.2, "created": "2026-10-30T16:29:46+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/pitch-down-1.mp3", "raw": "takes/030_question_where_are_you_from/ru/pitch-down-1-raw.mp3", "seconds": 1.1, "created": "2026-10-30T16:29:47+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/deeper-1.mp3", "raw": "takes/030_question_where_are_you_from/ru/deeper-1-raw.mp3", "seconds": 1.1, "created": "2026-10-30T16:29:47+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.2, "created": "2026-10-30T16:31:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.2, "created": "2026-10-30T16:31:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:50+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "tag": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:27+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "tts": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:50+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:54+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "voxtral-seva": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "voxtral-native": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "native-sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/native-sts-1.mp3", "raw": "takes/030_question_where_are_you_from/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:16+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "openai-sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/openai-sts-1.mp3", "raw": "takes/030_question_where_are_you_from/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:17+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/openai-male-sts-1.mp3", "raw": "takes/030_question_where_are_you_from/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:38+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.3}], "openai-sts-pitch": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/openai-sts-pitch-1.mp3", "raw": "takes/030_question_where_are_you_from/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.2}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/openai-male-sts-pitch-1.mp3", "raw": "takes/030_question_where_are_you_from/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.3}], "older-2": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/older-2-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:47+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:48+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/lower-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:29:48+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/pitch-down-1.mp3", "raw": "takes/030_question_where_are_you_from/en/pitch-down-1-raw.mp3", "seconds": 1.3, "created": "2026-10-30T16:29:48+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/deeper-1.mp3", "raw": "takes/030_question_where_are_you_from/en/deeper-1-raw.mp3", "seconds": 1.3, "created": "2026-10-30T16:29:48+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:50+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:50+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "tag": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:29:28+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "tts": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:03:51+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:15:55+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "voxtral-seva": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "voxtral-native": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.0}], "native-sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/native-sts-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:17+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "openai-sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/openai-sts-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.8}], "openai-male-sts": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/openai-male-sts-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:45+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.4}], "openai-sts-pitch": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.8}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.4}], "older-2": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/lower-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-10-30T16:29:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/pitch-down-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/pitch-down-1-raw.mp3", "seconds": 1.4, "created": "2026-10-30T16:29:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/deeper-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/deeper-1-raw.mp3", "seconds": 1.4, "created": "2026-10-30T16:29:49+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:50+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-10-30T16:31:50+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "invite_say": {"ru": {"source": [{"n": 1, "src": "takes/invite_say/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "older-2": [{"n": 1, "src": "takes/invite_say/ru/older-2-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/invite_say/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.6, "created": "2026-10-30T16:29:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/invite_say/ru/lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/invite_say/ru/pitch-down-1.mp3", "raw": "takes/invite_say/ru/pitch-down-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/invite_say/ru/deeper-1.mp3", "raw": "takes/invite_say/ru/deeper-1-raw.mp3", "seconds": 1.6, "created": "2026-10-30T16:29:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/invite_say/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/invite_say/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/invite_say/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "tag": [{"n": 1, "src": "takes/invite_say/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:47:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "tts": [{"n": 1, "src": "takes/invite_say/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:47:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "sts": [{"n": 1, "src": "takes/invite_say/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:47:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "voxtral-seva": [{"n": 1, "src": "takes/invite_say/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:16+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "voxtral-native": [{"n": 1, "src": "takes/invite_say/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:08+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "native-sts": [{"n": 1, "src": "takes/invite_say/en/native-sts-1.mp3", "raw": "takes/invite_say/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:21+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "openai-sts": [{"n": 1, "src": "takes/invite_say/en/openai-sts-1.mp3", "raw": "takes/invite_say/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:21+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "openai-male-sts": [{"n": 1, "src": "takes/invite_say/en/openai-male-sts-1.mp3", "raw": "takes/invite_say/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "openai-sts-pitch": [{"n": 1, "src": "takes/invite_say/en/openai-sts-pitch-1.mp3", "raw": "takes/invite_say/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/invite_say/en/openai-male-sts-pitch-1.mp3", "raw": "takes/invite_say/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "older-2": [{"n": 1, "src": "takes/invite_say/en/older-2-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/invite_say/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/invite_say/en/lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/invite_say/en/pitch-down-1.mp3", "raw": "takes/invite_say/en/pitch-down-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/invite_say/en/deeper-1.mp3", "raw": "takes/invite_say/en/deeper-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/invite_say/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:51+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/invite_say/en/lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/invite_say/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:20+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "tag": [{"n": 1, "src": "takes/invite_say/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:47:21+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "tts": [{"n": 1, "src": "takes/invite_say/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:47:22+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "sts": [{"n": 1, "src": "takes/invite_say/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:47:22+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "voxtral-seva": [{"n": 1, "src": "takes/invite_say/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:16+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "voxtral-native": [{"n": 1, "src": "takes/invite_say/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:16+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.2}], "native-sts": [{"n": 1, "src": "takes/invite_say/es-AR/native-sts-1.mp3", "raw": "takes/invite_say/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:23+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "openai-sts": [{"n": 1, "src": "takes/invite_say/es-AR/openai-sts-1.mp3", "raw": "takes/invite_say/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:24+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "openai-male-sts": [{"n": 1, "src": "takes/invite_say/es-AR/openai-male-sts-1.mp3", "raw": "takes/invite_say/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:41+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.9}], "openai-sts-pitch": [{"n": 1, "src": "takes/invite_say/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/invite_say/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/invite_say/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/invite_say/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.9}], "older-2": [{"n": 1, "src": "takes/invite_say/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/invite_say/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:29:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/invite_say/es-AR/lower-1.mp3", "raw": null, "seconds": 1.5, "created": "2026-10-30T16:29:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/invite_say/es-AR/pitch-down-1.mp3", "raw": "takes/invite_say/es-AR/pitch-down-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/invite_say/es-AR/deeper-1.mp3", "raw": "takes/invite_say/es-AR/deeper-1-raw.mp3", "seconds": 1.5, "created": "2026-10-30T16:29:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/invite_say/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/invite_say/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:52+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "invite_ask": {"ru": {"source": [{"n": 1, "src": "takes/invite_ask/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:23+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "older-2": [{"n": 1, "src": "takes/invite_ask/ru/older-2-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/invite_ask/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/invite_ask/ru/lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/invite_ask/ru/pitch-down-1.mp3", "raw": "takes/invite_ask/ru/pitch-down-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/invite_ask/ru/deeper-1.mp3", "raw": "takes/invite_ask/ru/deeper-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/invite_ask/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/invite_ask/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/invite_ask/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:24+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "tag": [{"n": 1, "src": "takes/invite_ask/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:47:25+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "tts": [{"n": 1, "src": "takes/invite_ask/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:47:25+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "sts": [{"n": 1, "src": "takes/invite_ask/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:47:25+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "voxtral-seva": [{"n": 1, "src": "takes/invite_ask/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "voxtral-native": [{"n": 1, "src": "takes/invite_ask/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:09+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "native-sts": [{"n": 1, "src": "takes/invite_ask/en/native-sts-1.mp3", "raw": "takes/invite_ask/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:27+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "openai-sts": [{"n": 1, "src": "takes/invite_ask/en/openai-sts-1.mp3", "raw": "takes/invite_ask/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:27+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "openai-male-sts": [{"n": 1, "src": "takes/invite_ask/en/openai-male-sts-1.mp3", "raw": "takes/invite_ask/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:42+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.4}], "openai-sts-pitch": [{"n": 1, "src": "takes/invite_ask/en/openai-sts-pitch-1.mp3", "raw": "takes/invite_ask/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.0}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/invite_ask/en/openai-male-sts-pitch-1.mp3", "raw": "takes/invite_ask/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.4}], "older-2": [{"n": 1, "src": "takes/invite_ask/en/older-2-1.mp3", "raw": null, "seconds": 1.9, "created": "2026-10-30T16:29:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/invite_ask/en/older-2-lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/invite_ask/en/lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:55+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/invite_ask/en/pitch-down-1.mp3", "raw": "takes/invite_ask/en/pitch-down-1-raw.mp3", "seconds": 1.9, "created": "2026-10-30T16:29:55+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/invite_ask/en/deeper-1.mp3", "raw": "takes/invite_ask/en/deeper-1-raw.mp3", "seconds": 1.9, "created": "2026-10-30T16:29:55+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/invite_ask/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:53+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/invite_ask/en/lower-medium-1.mp3", "raw": null, "seconds": 1.9, "created": "2026-10-30T16:31:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/invite_ask/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:26+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "tag": [{"n": 1, "src": "takes/invite_ask/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:47:27+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "tts": [{"n": 1, "src": "takes/invite_ask/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:47:28+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "sts": [{"n": 1, "src": "takes/invite_ask/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:47:28+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "voxtral-seva": [{"n": 1, "src": "takes/invite_ask/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "voxtral-native": [{"n": 1, "src": "takes/invite_ask/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.3}], "native-sts": [{"n": 1, "src": "takes/invite_ask/es-AR/native-sts-1.mp3", "raw": "takes/invite_ask/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:29+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "openai-sts": [{"n": 1, "src": "takes/invite_ask/es-AR/openai-sts-1.mp3", "raw": "takes/invite_ask/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:30+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "openai-male-sts": [{"n": 1, "src": "takes/invite_ask/es-AR/openai-male-sts-1.mp3", "raw": "takes/invite_ask/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:43+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.7}], "openai-sts-pitch": [{"n": 1, "src": "takes/invite_ask/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/invite_ask/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/invite_ask/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/invite_ask/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.7}], "older-2": [{"n": 1, "src": "takes/invite_ask/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/invite_ask/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:29:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/invite_ask/es-AR/lower-1.mp3", "raw": null, "seconds": 2.0, "created": "2026-10-30T16:29:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/invite_ask/es-AR/pitch-down-1.mp3", "raw": "takes/invite_ask/es-AR/pitch-down-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/invite_ask/es-AR/deeper-1.mp3", "raw": "takes/invite_ask/es-AR/deeper-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:29:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/invite_ask/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:31:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/invite_ask/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:54+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "019_phrase_my_full_name": {"ru": {"source": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:30+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 4.3}], "older-2": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/older-2-1.mp3", "raw": null, "seconds": 4.4, "created": "2026-10-30T16:29:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/older-2-lower-1.mp3", "raw": null, "seconds": 4.4, "created": "2026-10-30T16:29:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/lower-1.mp3", "raw": null, "seconds": 4.4, "created": "2026-10-30T16:29:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/pitch-down-1.mp3", "raw": "takes/019_phrase_my_full_name/ru/pitch-down-1-raw.mp3", "seconds": 4.3, "created": "2026-10-30T16:29:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/deeper-1.mp3", "raw": "takes/019_phrase_my_full_name/ru/deeper-1-raw.mp3", "seconds": 4.3, "created": "2026-10-30T16:29:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 4.2, "created": "2026-10-30T16:31:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/lower-medium-1.mp3", "raw": null, "seconds": 4.3, "created": "2026-10-30T16:31:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:31+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.4}], "tag": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/tag-1.mp3", "raw": null, "created": "2026-10-23T09:47:31+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.4}], "tts": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/tts-1.mp3", "raw": null, "created": "2026-10-23T09:47:31+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.0}], "sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/sts-1.mp3", "raw": null, "created": "2026-10-23T09:47:32+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.0}], "voxtral-seva": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 5.7}], "voxtral-native": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:29:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "native-sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/native-sts-1.mp3", "raw": "takes/019_phrase_my_full_name/en/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:34+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.2}], "openai-sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/openai-sts-1.mp3", "raw": "takes/019_phrase_my_full_name/en/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:34+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.5}], "openai-male-sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/openai-male-sts-1.mp3", "raw": "takes/019_phrase_my_full_name/en/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:54+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.9}], "openai-sts-pitch": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/openai-sts-pitch-1.mp3", "raw": "takes/019_phrase_my_full_name/en/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:07+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.5}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/openai-male-sts-pitch-1.mp3", "raw": "takes/019_phrase_my_full_name/en/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:11+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.9}], "older-2": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/older-2-1.mp3", "raw": null, "seconds": 3.0, "created": "2026-10-30T16:29:59+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/older-2-lower-1.mp3", "raw": null, "seconds": 3.0, "created": "2026-10-30T16:29:59+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/lower-1.mp3", "raw": null, "seconds": 3.2, "created": "2026-10-30T16:29:59+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/pitch-down-1.mp3", "raw": "takes/019_phrase_my_full_name/en/pitch-down-1-raw.mp3", "seconds": 3.4, "created": "2026-10-30T16:29:59+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/deeper-1.mp3", "raw": "takes/019_phrase_my_full_name/en/deeper-1-raw.mp3", "seconds": 3.4, "created": "2026-10-30T16:29:59+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 3.1, "created": "2026-10-30T16:31:56+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/lower-medium-1.mp3", "raw": null, "seconds": 3.1, "created": "2026-10-30T16:31:57+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:34+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 4.6}], "tag": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:47:35+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 4.4}], "tts": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:47:35+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 4.4}], "sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:47:36+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 4.1}], "voxtral-seva": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:20+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 5.0}], "voxtral-native": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:20+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 3.9}], "native-sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/native-sts-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:38+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 4.0}], "openai-sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/openai-sts-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 6.5}], "openai-male-sts": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/openai-male-sts-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:46+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 5.3}], "openai-sts-pitch": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 6.5}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 5.3}], "older-2": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/older-2-1.mp3", "raw": null, "seconds": 4.6, "created": "2026-10-30T16:30:01+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 4.8, "created": "2026-10-30T16:30:01+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/lower-1.mp3", "raw": null, "seconds": 4.6, "created": "2026-10-30T16:30:01+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/pitch-down-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/pitch-down-1-raw.mp3", "seconds": 4.6, "created": "2026-10-30T16:30:01+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/deeper-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/deeper-1-raw.mp3", "seconds": 4.6, "created": "2026-10-30T16:30:01+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 4.6, "created": "2026-10-30T16:31:57+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 4.5, "created": "2026-10-30T16:31:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "yo_me_llamo": {"ru": {"source": [{"n": 1, "src": "takes/yo_me_llamo/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:37+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "older-2": [{"n": 1, "src": "takes/yo_me_llamo/ru/older-2-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:30:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/yo_me_llamo/ru/older-2-lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:30:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/yo_me_llamo/ru/lower-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-10-30T16:30:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/yo_me_llamo/ru/pitch-down-1.mp3", "raw": "takes/yo_me_llamo/ru/pitch-down-1-raw.mp3", "seconds": 1.9, "created": "2026-10-30T16:30:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/yo_me_llamo/ru/deeper-1.mp3", "raw": "takes/yo_me_llamo/ru/deeper-1-raw.mp3", "seconds": 1.9, "created": "2026-10-30T16:30:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/yo_me_llamo/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/yo_me_llamo/ru/lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:38+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "tag": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/tag-1.mp3", "raw": null, "created": "2026-10-23T09:47:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}], "tts": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/tts-1.mp3", "raw": null, "created": "2026-10-23T09:47:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "sts": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/sts-1.mp3", "raw": null, "created": "2026-10-23T09:47:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "voxtral-seva": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/voxtral-seva-1.mp3", "raw": null, "created": "2026-10-23T10:30:21+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "voxtral-native": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/voxtral-native-1.mp3", "raw": null, "created": "2026-10-23T10:30:21+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.1}], "native-sts": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/native-sts-1.mp3", "raw": "takes/yo_me_llamo/es-AR/native-sts-1-raw.mp3", "created": "2026-10-23T09:47:41+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "openai-sts": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/openai-sts-1.mp3", "raw": "takes/yo_me_llamo/es-AR/openai-sts-1-raw.mp3", "created": "2026-10-23T09:47:42+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "openai-male-sts": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/openai-male-sts-1.mp3", "raw": "takes/yo_me_llamo/es-AR/openai-male-sts-1-raw.mp3", "created": "2026-10-23T09:58:48+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.9}], "openai-sts-pitch": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/openai-sts-pitch-1.mp3", "raw": "takes/yo_me_llamo/es-AR/openai-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:15+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.6}], "openai-male-sts-pitch": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/openai-male-sts-pitch-1.mp3", "raw": "takes/yo_me_llamo/es-AR/openai-male-sts-pitch-1-raw.mp3", "created": "2026-10-23T10:03:19+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 2.9}], "older-2": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/older-2-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:30:03+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 1.6, "created": "2026-10-30T16:30:04+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/lower-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:30:04+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/pitch-down-1.mp3", "raw": "takes/yo_me_llamo/es-AR/pitch-down-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:30:04+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/deeper-1.mp3", "raw": "takes/yo_me_llamo/es-AR/deeper-1-raw.mp3", "seconds": 1.8, "created": "2026-10-30T16:30:04+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:58+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-10-30T16:31:59+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}, "story_park": {"ru": {"source": [{"n": 1, "src": "takes/story_park/ru/source-1.mp3", "raw": null, "seconds": 8.2, "created": "2026-10-30T16:29:17+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2": [{"n": 1, "src": "takes/story_park/ru/older-2-1.mp3", "raw": null, "seconds": 8.6, "created": "2026-10-30T16:30:07+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/story_park/ru/older-2-lower-1.mp3", "raw": null, "seconds": 8.6, "created": "2026-10-30T16:30:07+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/story_park/ru/lower-1.mp3", "raw": null, "seconds": 8.6, "created": "2026-10-30T16:30:07+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/story_park/ru/pitch-down-1.mp3", "raw": "takes/story_park/ru/pitch-down-1-raw.mp3", "seconds": 8.2, "created": "2026-10-30T16:30:07+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/story_park/ru/deeper-1.mp3", "raw": "takes/story_park/ru/deeper-1-raw.mp3", "seconds": 8.2, "created": "2026-10-30T16:30:07+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/story_park/ru/older-2-lower-medium-1.mp3", "raw": null, "seconds": 8.6, "created": "2026-10-30T16:32:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/story_park/ru/lower-medium-1.mp3", "raw": null, "seconds": 8.7, "created": "2026-10-30T16:32:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "en": {"source": [{"n": 1, "src": "takes/story_park/en/source-1.mp3", "raw": null, "seconds": 8.2, "created": "2026-10-30T16:29:17+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2": [{"n": 1, "src": "takes/story_park/en/older-2-1.mp3", "raw": null, "seconds": 8.0, "created": "2026-10-30T16:30:11+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/story_park/en/older-2-lower-1.mp3", "raw": null, "seconds": 7.9, "created": "2026-10-30T16:30:11+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/story_park/en/lower-1.mp3", "raw": null, "seconds": 8.1, "created": "2026-10-30T16:30:11+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/story_park/en/pitch-down-1.mp3", "raw": "takes/story_park/en/pitch-down-1-raw.mp3", "seconds": 8.2, "created": "2026-10-30T16:30:11+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/story_park/en/deeper-1.mp3", "raw": "takes/story_park/en/deeper-1-raw.mp3", "seconds": 8.2, "created": "2026-10-30T16:30:11+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/story_park/en/older-2-lower-medium-1.mp3", "raw": null, "seconds": 7.9, "created": "2026-10-30T16:32:02+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/story_park/en/lower-medium-1.mp3", "raw": null, "seconds": 8.2, "created": "2026-10-30T16:32:06+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}, "es-AR": {"source": [{"n": 1, "src": "takes/story_park/es-AR/source-1.mp3", "raw": null, "seconds": 9.1, "created": "2026-10-30T16:29:17+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2": [{"n": 1, "src": "takes/story_park/es-AR/older-2-1.mp3", "raw": null, "seconds": 9.2, "created": "2026-10-30T16:30:14+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower": [{"n": 1, "src": "takes/story_park/es-AR/older-2-lower-1.mp3", "raw": null, "seconds": 9.0, "created": "2026-10-30T16:30:14+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower": [{"n": 1, "src": "takes/story_park/es-AR/lower-1.mp3", "raw": null, "seconds": 9.0, "created": "2026-10-30T16:30:14+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "pitch-down": [{"n": 1, "src": "takes/story_park/es-AR/pitch-down-1.mp3", "raw": "takes/story_park/es-AR/pitch-down-1-raw.mp3", "seconds": 9.1, "created": "2026-10-30T16:30:14+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "deeper": [{"n": 1, "src": "takes/story_park/es-AR/deeper-1.mp3", "raw": "takes/story_park/es-AR/deeper-1-raw.mp3", "seconds": 9.1, "created": "2026-10-30T16:30:14+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "older-2-lower-medium": [{"n": 1, "src": "takes/story_park/es-AR/older-2-lower-medium-1.mp3", "raw": null, "seconds": 9.1, "created": "2026-10-30T16:32:06+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "lower-medium": [{"n": 1, "src": "takes/story_park/es-AR/lower-medium-1.mp3", "raw": null, "seconds": 9.2, "created": "2026-10-30T16:32:06+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}]}}}, "sandbox": [], "source": {"voice_id": "E2GETHw1vl7pZzdRefEl", "name": "seva-child-1-Seva"}, "models": {"eleven": "eleven_v4", "sts": "eleven_multilingual_sts_v2", "openai": "gpt-4o-mini-tts", "openai_voices": {"openai-sts": "coral", "openai-male-sts": "ballad"}, "voxtral": "voxtral-mini-tts-3-0"}, "older": {"variants": [{"key": "older-2", "title": "+2 года", "family": "Ремикс ElevenLabs", "strength": 0.3, "prompt": "Make this voice sound about two years older. Keep the same speaker, timbre and accent.", "prompt_ru": "Сделай голос примерно на два года старше. Сохрани того же говорящего, тембр и акцент.", "voice_id": "GpYX9pp0PJzlxRfG5uFb", "previews": ["methods/older/older-2-1.mp3", "methods/older/older-2-2.mp3", "methods/older/older-2-3.mp3"]}, {"key": "older-2-lower", "title": "+2 года, ниже", "family": "Ремикс ElevenLabs", "strength": 0.3, "prompt": "Make this voice sound about two years older and lower the pitch slightly. Keep the same speaker, timbre and accent.", "prompt_ru": "Сделай голос примерно на два года старше и чуть ниже. Сохрани того же говорящего, тембр и акцент.", "voice_id": "S1BXYZR4Bwg8grIUVCgd", "previews": ["methods/older/older-2-lower-1.mp3", "methods/older/older-2-lower-2.mp3", "methods/older/older-2-lower-3.mp3"]}, {"key": "lower", "title": "Только ниже", "family": "Ремикс ElevenLabs", "strength": 0.3, "prompt": "Lower the pitch of this voice slightly. Keep everything else the same.", "prompt_ru": "Сделай голос чуть ниже. Всё остальное оставь как есть.", "voice_id": "qEuuXpByG1GDZdIXn6mL", "previews": ["methods/older/lower-1.mp3", "methods/older/lower-2.mp3", "methods/older/lower-3.mp3"]}, {"key": "older-2-lower-medium", "title": "+2 года, ниже, Medium", "family": "Ремикс ElevenLabs", "strength": 0.5, "prompt": "Make this voice sound about two years older and lower the pitch slightly. Keep the same speaker, timbre and accent.", "prompt_ru": "То же описание, что у «+2 года, ниже», но сила ремикса Medium вместо Low.", "voice_id": "eZ4WibhhFDJPiRzs1L7x", "previews": ["methods/older/older-2-lower-medium-1.mp3", "methods/older/older-2-lower-medium-2.mp3", "methods/older/older-2-lower-medium-3.mp3"]}, {"key": "lower-medium", "title": "Только ниже, Medium", "family": "Ремикс ElevenLabs", "strength": 0.5, "prompt": "Lower the pitch of this voice slightly. Keep everything else the same.", "prompt_ru": "То же описание, что у «Только ниже», но сила ремикса Medium вместо Low.", "voice_id": "u8NCzZbNRF5l83MN9q71", "previews": ["methods/older/lower-medium-1.mp3", "methods/older/lower-medium-2.mp3", "methods/older/lower-medium-3.mp3"]}, {"key": "pitch-down", "title": "Тон −10%", "family": "Обработка ffmpeg", "ratio": 0.9, "formant": "preserved", "prompt_ru": "Та же озвучка исходного клона, тон ниже на 10%, форманты (тембр) на месте.", "voice_id": null, "previews": []}, {"key": "deeper", "title": "Тон и тембр −8%", "family": "Обработка ffmpeg", "ratio": 0.92, "formant": "shifted", "prompt_ru": "Та же озвучка исходного клона, тон и форманты ниже на 8% — голос звучит «крупнее».", "voice_id": null, "previews": []}], "keys": ["source", "older-2", "older-2-lower", "lower", "older-2-lower-medium", "lower-medium", "pitch-down", "deeper"], "measures": {"ru": {"source": {"pitch": 302, "centroid": 2148, "seconds": 27.8}, "older-2": {"pitch": 308, "centroid": 2431, "seconds": 28.4}, "older-2-lower": {"pitch": 302, "centroid": 2292, "seconds": 28.0}, "lower": {"pitch": 296, "centroid": 2330, "seconds": 28.6}, "older-2-lower-medium": {"pitch": 308, "centroid": 2246, "seconds": 27.9}, "lower-medium": {"pitch": 291, "centroid": 2299, "seconds": 28.4}, "pitch-down": {"pitch": 276, "centroid": 2024, "seconds": 27.8}, "deeper": {"pitch": 281, "centroid": 2039, "seconds": 27.8}}, "en": {"source": {"pitch": 314, "centroid": 2087, "seconds": 26.2}, "older-2": {"pitch": 327, "centroid": 2373, "seconds": 25.3}, "older-2-lower": {"pitch": 308, "centroid": 2210, "seconds": 25.3}, "lower": {"pitch": 320, "centroid": 2248, "seconds": 25.6}, "older-2-lower-medium": {"pitch": 327, "centroid": 2163, "seconds": 24.9}, "lower-medium": {"pitch": 308, "centroid": 2210, "seconds": 25.8}, "pitch-down": {"pitch": 286, "centroid": 2011, "seconds": 26.2}, "deeper": {"pitch": 291, "centroid": 2022, "seconds": 26.2}}, "es-AR": {"source": {"pitch": 262, "centroid": 2046, "seconds": 29.2}, "older-2": {"pitch": 278, "centroid": 2189, "seconds": 29.0}, "older-2-lower": {"pitch": 281, "centroid": 2183, "seconds": 29.2}, "lower": {"pitch": 276, "centroid": 2181, "seconds": 29.2}, "older-2-lower-medium": {"pitch": 271, "centroid": 2090, "seconds": 29.6}, "lower-medium": {"pitch": 262, "centroid": 2103, "seconds": 29.6}, "pitch-down": {"pitch": 242, "centroid": 1915, "seconds": 29.2}, "deeper": {"pitch": 250, "centroid": 1950, "seconds": 29.2}}}, "blocked": [{"title": "+4 года, ниже", "strength": 0.5, "prompt": "Make this voice sound about four years older, with a noticeably lower pitch and a slightly fuller, more mature timbre. Keep the same speaker identity and accent.", "prompt_ru": "Сделай голос примерно на четыре года старше, заметно ниже, с чуть более полным и взрослым тембром. Сохрани узнаваемость и акцент."}, {"title": "+2 года, ниже, High", "strength": 0.7, "prompt": "Make this voice sound about two years older and lower the pitch slightly. Keep the same speaker, timbre and accent.", "prompt_ru": "То же описание, что прошло на силе Low и Medium, — на High отклонено."}], "remix_text": "Привет! Меня зовут Сева. Сегодня я расскажу, как прошёл мой день. Утром мы с мамой гуляли в парке, кормили уток и катались на качелях. А вечером я читал книгу и рассказывал папе, что видел.", "seed": 11}, "limits": {"max_text": 300}, "rubberband": true, "offline_date": "30.10.2026", "static": true};
+// В файле для отправки звук вшит сюда (base64 по пути записи), сервера нет:
+// перегенерации и песочницы в нём нет.
+const AUDIO = null;
+// Статичный сайт (GitHub Pages): звук отдельными файлами рядом, сервера тоже нет.
+const STATIC = Boolean(DATA.static);
+const OFFLINE = Boolean(AUDIO) || STATIC;
+const GROUPS = [
+  { key: "prompt", title: "Приглашения аватара" },
+  { key: "word", title: "Слова" },
+  { key: "phrase", title: "Фразы" },
+  { key: "question", title: "Вопросы" },
+];
+const TABLE_LANGS = ["en", "es-AR"];
+const SPEED = { min: 0.5, max: 1.5, step: 0.05, default: 0.8 };
+const SPEEDS_KEY = "voice-stand-speeds-v2";
+const PICKS_KEY = "voice-stand-picks";
+const PLAY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.2v9.6L10.5 6z"/></svg>';
+const STOP_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1"/></svg>';
+const VARIANT = Object.fromEntries(DATA.variants.map((variant) => [variant.key, variant]));
+const LANG = Object.fromEntries(DATA.languages.map((language) => [language.code, language]));
+
+// Варианты «Голоса старше»: исходный клон, ремиксы, обработка ffmpeg.
+const OLDER = Object.fromEntries([
+  ["source", { key: "source", title: "Исходный клон", family: "Сейчас" }],
+  ...DATA.older.variants.map((variant) => [variant.key, { ...variant, raw_caption: variant.ratio ? "до обработки" : null }]),
+]);
+// Все варианты обеих таблиц — для песочницы.
+const INFO = { ...VARIANT, ...Object.fromEntries(Object.entries(OLDER).filter(([key]) => key !== "source")) };
+const TABLES = {
+  older: {
+    id: "older-grid", switchId: "older-switch", langs: ["ru", "en", "es-AR"], lang: "ru", info: OLDER,
+    groups: [{ key: "story", title: "Рассказ" }, ...GROUPS], keys: () => DATA.older.keys,
+    onLang: () => renderOlderNotes(),
+  },
+  accent: {
+    id: "grid", switchId: "switch", langs: ["en", "es-AR"], lang: location.hash === "#es" ? "es-AR" : "en", info: VARIANT,
+    groups: GROUPS, keys: (code) => LANG[code].variants,
+    onLang: () => { history.replaceState(null, "", TABLES.accent.lang === "en" ? "#en" : "#es"); renderMethods(); },
+  },
+};
+const speeds = load(SPEEDS_KEY, { global: SPEED.default, blocks: {}, phrases: {} });
+const picks = load(PICKS_KEY, {});
+
+function load(key, fallback) {
+  try { return Object.assign(fallback, JSON.parse(localStorage.getItem(key)) || {}); } catch { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+function el(tag, attrs = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [name, value] of Object.entries(attrs)) {
+    if (value === undefined || value === null || value === false) continue;
+    if (name === "text") node.textContent = value;
+    else if (name === "html") node.innerHTML = value;
+    else node.setAttribute(name, value === true ? "" : value);
+  }
+  for (const child of children) if (child) node.append(child);
+  return node;
+}
+const blobs = {};
+function audioUrl(src) {
+  if (!AUDIO) return "audio/" + src;
+  // base64 разворачивается в Blob только когда запись впервые нужна.
+  const file = AUDIO.files[AUDIO.paths[src]];
+  if (!blobs[src] && file) {
+    const binary = atob(file);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    blobs[src] = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+  }
+  return blobs[src] || "";
+}
+function seconds(value) { return value == null ? "" : value.toFixed(1).replace(".", ",") + " с"; }
+function formatSpeed(value) { return value.toFixed(2).replace(".", ",") + "×"; }
+function when(iso) {
+  return new Date(iso).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+// ——— скорость: фраза → раздел → общая ———
+function speedFor(scope) {
+  if (!scope) return speeds.global;
+  return speeds.phrases[scope.phrase] ?? speeds.blocks[scope.block] ?? speeds.global;
+}
+function speedOptions(select, value, inheritLabel) {
+  select.replaceChildren(el("option", { value: "", text: inheritLabel }));
+  for (let v = SPEED.min; v <= SPEED.max + 1e-9; v += SPEED.step) {
+    const rounded = Math.round(v * 100) / 100;
+    select.append(el("option", { value: String(rounded), text: formatSpeed(rounded) }));
+  }
+  select.value = value == null ? "" : String(value);
+}
+function refreshSpeeds() {
+  save(SPEEDS_KEY, speeds);
+  document.getElementById("speed-global").value = String(speeds.global);
+  document.getElementById("speed-global-value").textContent = formatSpeed(speeds.global);
+  for (const select of document.querySelectorAll("select[data-block-speed]")) {
+    select.options[0].textContent = "как общая (" + formatSpeed(speeds.global) + ")";
+  }
+  for (const select of document.querySelectorAll("select[data-phrase-speed]")) {
+    const block = select.dataset.block;
+    select.options[0].textContent = "скорость: по разделу, " + formatSpeed(speeds.blocks[block] ?? speeds.global);
+  }
+  for (const button of document.querySelectorAll(".play[data-seconds]")) {
+    const time = button.querySelector(".time");
+    if (time) time.textContent = seconds(Number(button.dataset.seconds) / speedFor(scopeOf(button)));
+  }
+  if (current) player.playbackRate = speedFor(scopeOf(current));
+}
+function scopeOf(button) {
+  return button.dataset.phrase ? { phrase: button.dataset.phrase, block: button.dataset.block } : null;
+}
+
+// ——— плеер ———
+const player = new Audio();
+player.preservesPitch = true;
+player.webkitPreservesPitch = true;
+let current = null;
+let queue = [];
+function setIcon(button, playing) {
+  button.querySelector(".icon").innerHTML = playing ? STOP_ICON : PLAY_ICON;
+  button.classList.toggle("is-playing", playing);
+}
+function markCurrent(button) {
+  for (const node of document.querySelectorAll(".is-current")) node.classList.remove("is-current");
+  const cell = button?.closest("td[data-variant]");
+  if (!cell) return;
+  cell.closest("tr").classList.add("is-current");
+  cell.closest("table").querySelector('thead th[data-variant="' + cell.dataset.variant + '"]')?.classList.add("is-current");
+}
+function stop() {
+  queue = [];
+  player.pause();
+  if (current) setIcon(current, false);
+  current = null;
+  markCurrent(null);
+}
+function start(button) {
+  if (current) setIcon(current, false);
+  current = button;
+  setIcon(button, true);
+  markCurrent(button);
+  player.src = audioUrl(button.dataset.src);
+  const speed = speedFor(scopeOf(button));
+  player.defaultPlaybackRate = speed;
+  player.playbackRate = speed;
+  player.play().catch(stop);
+}
+player.addEventListener("ended", () => {
+  if (current) setIcon(current, false);
+  current = null;
+  markCurrent(null);
+  const next = queue.shift();
+  if (next) setTimeout(() => start(next), 350);
+});
+function playButton(src, { label, caption, aria, method, mini, scope, secondsValue } = {}) {
+  if (!src) return el("span", { class: "empty", text: "—" });
+  const button = el("button", { type: "button", class: "play" + (method ? " method" : "") + (mini ? " mini" : ""), "aria-label": aria || label || "Слушать" });
+  button.dataset.src = src;
+  if (scope) { button.dataset.phrase = scope.phrase; button.dataset.block = scope.block; }
+  button.append(el("span", { class: "icon", html: PLAY_ICON }));
+  if (label) button.append(el("span", { class: "label", text: label }));
+  if (caption) button.append(el("span", { class: "caption", text: caption }));
+  if (secondsValue != null) {
+    button.dataset.seconds = secondsValue;
+    button.append(el("span", { class: "time", text: seconds(secondsValue / speedFor(scope)) }));
+  }
+  button.addEventListener("click", () => {
+    if (current === button) { stop(); return; }
+    queue = [];
+    start(button);
+  });
+  return button;
+}
+
+// ——— дубли ———
+function takesOf(phrase, language, variant) {
+  return DATA.takes?.[phrase]?.[language]?.[variant] || [];
+}
+function pickedTake(phrase, language, variant) {
+  const done = takesOf(phrase, language, variant).filter((take) => take.status !== "error" && take.src);
+  const wanted = picks[[phrase, language, variant].join("|")];
+  return done.find((take) => take.n === wanted) || done[done.length - 1] || null;
+}
+
+// ——— таблицы ———
+// На странице две таблицы фраз — «Голос старше» и «Акцент», у каждой свой
+// язык, свои колонки и свои подписи вариантов.
+function renderSwitch(table) {
+  const switcher = document.getElementById(table.switchId);
+  switcher.replaceChildren();
+  for (const code of table.langs) {
+    const tab = el("button", { type: "button", role: "tab", "aria-selected": String(code === table.lang), text: LANG[code].title });
+    tab.addEventListener("click", () => {
+      table.lang = code;
+      stop();
+      renderSwitch(table);
+      renderGrid(table);
+      table.onLang?.();
+    });
+    switcher.append(tab);
+  }
+}
+
+function renderAllGrids() {
+  for (const table of Object.values(TABLES)) renderGrid(table);
+}
+
+function renderGrid(table) {
+  const language = table.lang;
+  const keys = table.keys(language);
+  const matrix = el("table", { class: "matrix" });
+  const head = el("tr", {}, [el("th", { class: "phrase-cell", scope: "col", text: "Фраза" })]);
+  let family = null;
+  for (const key of keys) {
+    const variant = table.info[key];
+    head.append(el("th", { scope: "col", "data-variant": key, class: variant.family !== family ? "family-start" : null }, [
+      el("span", { class: "family", text: variant.family }), document.createTextNode(variant.title),
+    ]));
+    family = variant.family;
+  }
+  head.append(el("th", { scope: "col", class: "family-start", text: "Все подряд" }));
+  matrix.append(el("thead", {}, [head]));
+
+  const seen = new Set();
+  for (const group of table.groups) {
+    const phrases = DATA.phrases.filter((phrase) => {
+      if (phrase.group !== group.key || !phrase.texts[language] || seen.has(phrase.texts[language])) return false;
+      seen.add(phrase.texts[language]);
+      return true;
+    });
+    if (!phrases.length) continue;
+    const block = language + ":" + group.key;
+    const select = el("select", { id: table.id + "-speed-" + block.replace(/[^a-z0-9]+/gi, "-"), "data-block-speed": "" });
+    speedOptions(select, speeds.blocks[block], "как общая");
+    select.addEventListener("change", () => {
+      if (select.value) speeds.blocks[block] = Number(select.value); else delete speeds.blocks[block];
+      refreshSpeeds();
+    });
+    const body = el("tbody", {}, [
+      el("tr", { class: "group" }, [
+        el("th", { colspan: String(keys.length + 2), scope: "rowgroup" }, [
+          el("div", { class: "group-inner" }, [
+            el("h3", { text: group.title }),
+            el("label", { class: "speed", for: select.id, text: "Скорость раздела" }), select,
+          ]),
+        ]),
+      ]),
+    ]);
+    for (const phrase of phrases) body.append(phraseRow(table, phrase, block, keys));
+    matrix.append(body);
+  }
+  document.getElementById(table.id).replaceChildren(matrix);
+  refreshSpeeds();
+}
+
+function phraseRow(table, phrase, block, keys) {
+  const language = table.lang;
+  const scope = { phrase: language + ":" + phrase.key, block };
+  const row = el("tr", { class: "phrase-row", "data-phrase": phrase.key });
+  const ruTake = language === "ru" ? null : pickedTake(phrase.key, "ru", "source");
+  const select = el("select", {
+    id: table.id + "-speed-" + scope.phrase.replace(/[^a-z0-9]+/gi, "-"), "data-phrase-speed": "", "data-block": block,
+    "aria-label": "Скорость фразы «" + phrase.texts[language] + "»",
+  });
+  speedOptions(select, speeds.phrases[scope.phrase], "скорость: по разделу");
+  select.addEventListener("change", () => {
+    if (select.value) speeds.phrases[scope.phrase] = Number(select.value); else delete speeds.phrases[scope.phrase];
+    refreshSpeeds();
+  });
+  row.append(el("th", { class: "phrase-cell", scope: "row" }, [
+    el("div", { class: "phrase" }, [
+      el("span", { class: "target", lang: language, text: phrase.texts[language] }),
+      language === "ru" ? null : el("span", { class: "ru" }, [
+        el("span", { text: phrase.texts.ru }),
+        ruTake ? playButton(ruTake.src, { mini: true, scope, secondsValue: ruTake.seconds, aria: "Исходный по-русски: " + phrase.texts.ru }) : null,
+      ]),
+      el("span", { class: "own-speed" }, [select]),
+    ]),
+  ]));
+
+  const buttons = [];
+  let family = null;
+  for (const key of keys) {
+    const variant = table.info[key];
+    const take = pickedTake(phrase.key, language, key);
+    const button = playButton(take?.src, {
+      method: key !== "source", scope, secondsValue: take?.seconds,
+      aria: variant.title + ", дубль " + (take?.n ?? "—") + ": " + phrase.texts[language],
+    });
+    if (button.tagName === "BUTTON") buttons.push(button);
+    const startsFamily = variant.family !== family;
+    family = variant.family;
+    row.append(el("td", { "data-variant": key, class: startsFamily ? "family-start" : null }, [
+      el("div", { class: "cell" }, [button, takesButton(table, phrase, key)]),
+    ]));
+  }
+  const series = el("button", { type: "button", class: "play series", "aria-label": "Все варианты подряд: " + phrase.texts[language] }, [
+    el("span", { class: "icon", html: PLAY_ICON }), el("span", { text: "Подряд" }),
+  ]);
+  series.addEventListener("click", () => {
+    stop();
+    queue = buttons.slice(1);
+    if (buttons[0]) start(buttons[0]);
+  });
+  row.append(el("td", { class: "family-start" }, [series]));
+  return row;
+}
+
+function takesButton(table, phrase, key) {
+  const all = takesOf(phrase.key, table.lang, key);
+  const busy = all.some((take) => take.status === "running");
+  const done = all.filter((take) => take.src).length;
+  const picked = pickedTake(phrase.key, table.lang, key);
+  const single = OFFLINE ? "1 дубль" : "↻ " + done;
+  const button = el("button", {
+    type: "button", class: "takes" + (busy ? " busy" : ""),
+    text: busy ? "… дубль" : (done > 1 ? picked.n + " из " + done : single),
+    "aria-label": (OFFLINE ? "Дубли: " : "Дубли и перегенерация: ") + table.info[key].title + ", " + phrase.texts[table.lang],
+  });
+  button.addEventListener("click", () => openTakes(table, phrase, key));
+  return button;
+}
+
+// ——— окно дублей ———
+const dialog = document.getElementById("takes-dialog");
+let opened = null;
+document.getElementById("takes-close").addEventListener("click", () => dialog.close());
+dialog.addEventListener("close", () => { opened = null; });
+
+function openTakes(table, phrase, key) {
+  opened = { table, phrase, key, lang: table.lang };
+  document.getElementById("takes-title").textContent = table.info[key].title + " · " + LANG[table.lang].title;
+  document.getElementById("takes-phrase").textContent = phrase.texts[table.lang];
+  document.getElementById("takes-status").textContent = "";
+  renderTakes();
+  if (!dialog.open) dialog.showModal();
+}
+
+function renderTakes() {
+  if (!opened) return;
+  const { phrase, key, table } = opened;
+  const caption = table.info[key].raw_caption || "до переноса";
+  const scope = { phrase: opened.lang + ":" + phrase.key, block: opened.lang + ":" + phrase.group };
+  const list = document.getElementById("takes-list");
+  list.replaceChildren();
+  const all = takesOf(phrase.key, opened.lang, key);
+  const picked = pickedTake(phrase.key, opened.lang, key);
+  for (const take of [...all].reverse()) {
+    const item = el("div", { class: "take" + (picked && take.n === picked.n ? " picked" : "") });
+    item.append(el("strong", { text: "Дубль " + take.n }));
+    if (take.src) {
+      item.append(playButton(take.src, { method: true, scope, secondsValue: take.seconds, aria: "Дубль " + take.n }));
+      if (take.raw) item.append(playButton(take.raw, { mini: true, caption, scope, aria: "Дубль " + take.n + ", " + caption }));
+      const id = "pick-" + take.n;
+      const radio = el("input", { type: "radio", name: "pick", id, checked: picked && take.n === picked.n });
+      radio.addEventListener("change", () => {
+        picks[[phrase.key, opened.lang, key].join("|")] = take.n;
+        save(PICKS_KEY, picks);
+        renderTakes();
+        renderAllGrids();
+      });
+      item.append(el("label", { for: id }, [radio, document.createTextNode("играть в таблице")]));
+    } else if (take.status === "running") {
+      item.append(el("span", { class: "meta", text: "озвучивается…" }));
+    }
+    item.append(el("span", { class: "meta", text: when(take.created) + " · " + take.origin }));
+    if (take.error) item.append(el("span", { class: "error", text: take.error }));
+    list.append(item);
+  }
+}
+
+document.getElementById("takes-new").addEventListener("click", async () => {
+  if (!opened) return;
+  const { phrase, key } = opened;
+  const status = document.getElementById("takes-status");
+  const button = document.getElementById("takes-new");
+  button.disabled = true;
+  status.className = "status";
+  status.textContent = "Озвучиваю новый дубль…";
+  try {
+    const started = await post("api/regenerate", { phrase: phrase.key, lang: opened.lang, variant: key });
+    await refreshState();
+    renderTakes();
+    renderAllGrids();
+    await waitJob(started.job_id);
+    await refreshState();
+    status.textContent = "Готово: дубль " + started.take + ".";
+  } catch (error) {
+    status.className = "status error";
+    status.textContent = error.message;
+    await refreshState();
+  } finally {
+    button.disabled = false;
+    renderTakes();
+    renderAllGrids();
+  }
+});
+
+// ——— сервер ———
+async function post(url, body) {
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Сервер ответил ошибкой " + response.status + ".");
+  return data;
+}
+async function waitJob(id, onTick) {
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const response = await fetch("api/jobs/" + id);
+    if (!response.ok) throw new Error("Задание потерялось — возможно, сервер перезапустился.");
+    const job = await response.json();
+    if (onTick) await onTick(job);
+    if (job.status !== "running") return job;
+  }
+}
+async function refreshState() {
+  const response = await fetch("api/state");
+  if (!response.ok) return;
+  const state = await response.json();
+  DATA.takes = state.takes;
+  DATA.sandbox = state.sandbox;
+}
+
+// ——— песочница ———
+const sandboxLang = document.getElementById("sandbox-lang");
+const sandboxText = document.getElementById("sandbox-text");
+sandboxText.maxLength = DATA.limits.max_text;
+for (const language of DATA.languages) sandboxLang.append(el("option", { value: language.code, text: language.title }));
+sandboxLang.value = TABLES.accent.lang;
+sandboxLang.addEventListener("change", renderSandboxVariants);
+sandboxText.addEventListener("input", () => {
+  document.getElementById("sandbox-count").textContent = sandboxText.value.length + " / " + DATA.limits.max_text;
+});
+
+function renderSandboxVariants() {
+  const box = document.getElementById("sandbox-variants");
+  box.replaceChildren();
+  const keys = [...LANG[sandboxLang.value].variants, ...DATA.older.keys.filter((key) => key !== "source")];
+  for (const key of keys) {
+    const id = "sandbox-" + key;
+    const disabled = (key.endsWith("-pitch") || INFO[key].ratio) && !DATA.rubberband;
+    const older = !VARIANT[key];
+    box.append(el("label", { for: id }, [
+      el("input", { type: "checkbox", id, value: key, checked: !disabled && !older, disabled }),
+      document.createTextNode((older ? "Старше: " : "") + INFO[key].title + (disabled ? " (нет rubberband)" : "")),
+    ]));
+  }
+}
+
+document.getElementById("sandbox-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const status = document.getElementById("sandbox-status");
+  const submit = document.getElementById("sandbox-submit");
+  const variants = [...document.querySelectorAll("#sandbox-variants input:checked")].map((input) => input.value);
+  submit.disabled = true;
+  status.className = "status";
+  status.textContent = "Озвучиваю " + variants.length + " вариантами…";
+  try {
+    const started = await post("api/sandbox", { text: sandboxText.value, lang: sandboxLang.value, variants });
+    await refreshState();
+    renderRuns();
+    await waitJob(started.job_id, async (job) => {
+      const left = Object.values(job.items).filter((item) => item.status === "pending" || item.status === "running").length;
+      status.textContent = left ? "Осталось вариантов: " + left : "Готово.";
+      await refreshState();
+      renderRuns();
+    });
+    status.textContent = "Готово.";
+  } catch (error) {
+    status.className = "status error";
+    status.textContent = error.message;
+  } finally {
+    submit.disabled = false;
+    await refreshState();
+    renderRuns();
+  }
+});
+
+function renderRuns() {
+  const box = document.getElementById("runs");
+  box.replaceChildren();
+  if (!DATA.sandbox.length) {
+    box.append(el("p", { class: "note", text: "Пока пусто. Озвученные здесь фразы сохраняются на сервере и видны всем, кто открывает стенд." }));
+    return;
+  }
+  for (const run of DATA.sandbox) {
+    const grid = el("div", { class: "run-grid" });
+    for (const key of Object.keys(INFO)) {
+      const result = run.results[key];
+      if (!result) continue;
+      const caption = INFO[key].raw_caption || "до переноса";
+      const item = el("div", { class: "run-item" }, [el("span", { class: "name", text: INFO[key].title })]);
+      if (result.status === "done") {
+        const line = el("div", { class: "cell" }, [playButton(result.src, { method: key !== "source", aria: INFO[key].title + ": " + run.text })]);
+        if (result.raw) line.append(playButton(result.raw, { mini: true, caption, aria: INFO[key].title + ", " + caption }));
+        item.append(line);
+      } else if (result.status === "error") {
+        item.append(el("span", { class: "error", text: result.error }));
+      } else {
+        item.append(el("span", { class: "status", text: "озвучивается…" }));
+      }
+      grid.append(item);
+    }
+    box.append(el("article", { class: "run" }, [
+      el("div", { class: "run-head" }, [
+        el("span", { class: "run-text", lang: run.lang, text: run.text }),
+        el("span", { class: "muted", text: LANG[run.lang].title + " · " + when(run.created) }),
+      ]),
+      grid,
+    ]));
+  }
+}
+
+// ——— как получен каждый вариант ———
+function methodCard(key, steps, listen = [], facts = []) {
+  const card = el("article", { class: "method-card", id: "method-" + key }, [el("h3", { text: VARIANT[key].title })]);
+  card.append(el("ol", {}, steps.map((step) => el("li", { html: step }))));
+  for (const item of listen) {
+    if (!item.src) continue;
+    card.append(el("div", { class: "listen" }, [
+      el("span", { text: item.label }),
+      el("audio", { controls: true, preload: "none", src: audioUrl(item.src) }),
+    ]));
+  }
+  if (facts.length) card.append(el("div", { class: "facts" }, facts.map((fact) => el("span", { class: "mono", text: fact }))));
+  return card;
+}
+
+function renderMethods() {
+  const lang = TABLES.accent.lang;
+  const language = LANG[lang];
+  const native = language.native;
+  const m = DATA.models;
+  const tag = language.accent_tag;
+  const pitch = (key) => "+" + Math.round(((language.pitch[key] || 1) - 1) * 100) + "%";
+  document.getElementById("methods-common").innerHTML =
+    "Описание для языка <b>" + language.title + "</b> — переключается вверху. Везде, где фраза озвучивается в ElevenLabs, это " +
+    "<span class='mono'>" + m.eleven + "</span> с языком фразы (language_code), stability 0.5 и similarity 0.9 — как в книгах приложения. " +
+    "Перенос тембра — Speech-to-Speech <span class='mono'>" + m.sts + "</span> в исходный клон Севы.";
+  const box = document.getElementById("methods");
+  box.replaceChildren(
+    methodCard("source", [
+      "Сева записал три фразы по-русски (~32 с): «Наше приключение начинается! Итак, ребятки.», «Вилли начинает ехать!», «Какая красотка! Я хочу с ней познакомиться.»",
+      "24.07.2026 по ним в ElevenLabs сделан клон Instant Voice Cloning <span class='mono'>" + DATA.source.name + "</span>.",
+      "Фраза озвучивается этим клоном. Так сейчас звучат книги приложения — с этим вариантом сравниваются все остальные.",
+    ], [], ["voice_id " + DATA.source.voice_id]),
+    methodCard("tag", [
+      "Тот же исходный клон и те же настройки.",
+      "Перед фразой в текст добавлен аудио-тег <span class='mono'>" + tag + "</span>. Отдельного параметра для варианта языка у ElevenLabs нет, а по их FAQ тегом можно попробовать направить акцент.",
+      "Сам тег не произносится — проверено распознаванием речи.",
+    ]),
+    methodCard("tts", [
+      "Исходный клон прочитал текст ~30 с на языке (текст — под карточками).",
+      "По этой записи сделан новый клон Instant Voice Cloning «под язык» — без шумоподавления, с метками языка и акцента.",
+      "Фраза озвучивается новым клоном. Гипотеза: клон по речи на языке говорит без акцента. Риск: в исходной записи акцент уже есть, и клон его унаследует.",
+    ], [{ label: "Запись, по которой сделан клон", src: "methods/" + lang + "-tts-sample.mp3" }]),
+    methodCard("sts", [
+      "Тот же текст ~30 с читает носитель — " + native.name + " (" + native.about + ") на " + m.eleven + ".",
+      "Speech-to-Speech переносит на запись тембр исходного клона Севы: произношение и интонация остаются от носителя.",
+      "По получившейся записи сделан клон Instant Voice Cloning, им озвучивается фраза.",
+    ], [
+      { label: "1. Носитель читает текст", src: "methods/" + lang + "-native.mp3" },
+      { label: "2. После переноса тембра — по ней сделан клон", src: "methods/" + lang + "-sts-sample.mp3" },
+    ]),
+    methodCard("voxtral-seva", [
+      "Mistral Voxtral TTS 3 (<span class='mono'>" + m.voxtral + "</span>) клонирует без обучения: образец голоса отправляется вместе с каждой фразой и у Mistral как голос не сохраняется.",
+      "Образец — три настоящие записи Севы по-русски подряд, обрезанные до 29,9 с (Mistral принимает не длиннее 30 с). Сами записи на странице не выкладываются.",
+      "Язык Voxtral определяет по тексту сам — на одиночных словах и коротких приглашениях ошибается.",
+      "Обучение Mistral на запросах API выключено в настройках аккаунта.",
+    ]),
+    methodCard("voxtral-native", [
+      "Тот же Voxtral TTS 3.",
+      "Образец — запись из шага 2 варианта «Носитель»: тембр Севы с произношением носителя (" + native.name + "), 30 с.",
+    ], [{ label: "Образец", src: "methods/" + lang + "-sts-sample.mp3" }]),
+    methodCard("native-sts", [
+      "Клона нет. Каждую фразу читает носитель " + native.name + " на " + m.eleven + ".",
+      "Speech-to-Speech переносит на запись тембр исходного клона Севы.",
+      "В окне дублей есть запись до переноса — слышно, что перенос сохранил, а что потерял.",
+    ]),
+    methodCard("openai-sts", [
+      "Клона нет. Фразу читает OpenAI <span class='mono'>" + m.openai + "</span> женским голосом <span class='mono'>" + m.openai_voices["openai-sts"] + "</span> с инструкцией про акцент (ниже).",
+      "Speech-to-Speech ElevenLabs переносит на запись тембр исходного клона Севы.",
+      "Клонировать голос Севы в самом OpenAI нельзя: «Children's voices aren't allowed».",
+    ], [], ["instructions: " + language.openai_instructions]),
+    methodCard("openai-male-sts", [
+      "То же, что «Перенос: OpenAI», но читает мужской голос <span class='mono'>" + m.openai_voices["openai-male-sts"] + "</span> — самый высокий из мужских голосов OpenAI (медиана тона ≈176 Гц; у coral ≈221 Гц, у Севы 310–370 Гц).",
+      "После переноса высота у мужского и женского вариантов почти одинаковая (~250 Гц): перенос подтягивает её к Севе, разница остаётся в манере.",
+    ]),
+    methodCard("openai-sts-pitch", [
+      "Перенос OpenAI (женский голос) — как в своей колонке.",
+      "После переноса тон на 20–25% ниже, чем у клона Севы, поэтому ffmpeg rubberband поднимает его с сохранением формант: тембр и темп не меняются.",
+      "Подъём — до медианы основного тона исходного клона на этом языке: " + pitch("openai-sts-pitch") + ".",
+    ]),
+    methodCard("openai-male-sts-pitch", [
+      "Перенос OpenAI (мужской голос) — как в своей колонке.",
+      "Тон поднят rubberband до медианы клона Севы: " + pitch("openai-male-sts-pitch") + ".",
+      "При подъёме на треть (английский) разборчивость падает: имена распознаются хуже.",
+    ]),
+  );
+  const reference = document.querySelector("#reference p");
+  reference.textContent = language.reference_text;
+  reference.lang = lang;
+}
+
+// ——— голос старше: что изменилось ———
+function percent(value, base) {
+  if (value == null || base == null) return null;
+  return Math.round((value / base - 1) * 100);
+}
+function signed(value) {
+  if (value == null) return "—";
+  return (value > 0 ? "+" : value < 0 ? "−" : "±") + Math.abs(value) + "%";
+}
+function strengthName(value) {
+  return value <= 0.3 ? "Low" : value <= 0.5 ? "Medium" : value <= 0.7 ? "High" : "Max";
+}
+function olderRange(keys, field) {
+  const values = [];
+  for (const byVariant of Object.values(DATA.older.measures)) {
+    for (const key of keys) {
+      const change = percent(byVariant[key]?.[field], byVariant.source?.[field]);
+      if (change != null) values.push(change);
+    }
+  }
+  return values.length ? [Math.min(...values), Math.max(...values)] : [null, null];
+}
+
+function renderOlderNotes() {
+  const language = TABLES.older.lang;
+  const remixes = DATA.older.variants.filter((variant) => !variant.ratio).map((variant) => variant.key);
+  const processed = DATA.older.variants.filter((variant) => variant.ratio).map((variant) => variant.key);
+  const [pitchLow, pitchHigh] = olderRange(remixes, "pitch");
+  const [brightLow, brightHigh] = olderRange(remixes, "centroid");
+  const [processedLow, processedHigh] = olderRange(processed, "pitch");
+  const findings = document.getElementById("older-findings");
+  findings.replaceChildren(
+    el("p", { html:
+      "<strong>Что показали замеры.</strong> Ремиксы, которые ElevenLabs пропустил (сила Low и Medium), высоту голоса почти не меняют: основной тон от " +
+      signed(pitchLow) + " до " + signed(pitchHigh) + " — это в пределах разброса между дублями. А вот спектр становится светлее на " +
+      signed(brightLow) + "…" + signed(brightHigh) + " — больше разброса, то есть голос скорее моложе, чем старше. Ремиксы сильнее и с запросом «на четыре года старше» ElevenLabs отклонил по правилам безопасности." }),
+    el("p", { html:
+      "Обработка ffmpeg опускает тон предсказуемо (" + signed(processedHigh) + "…" + signed(processedLow) + "), но это та же озвучка нынешнего клона: манера, интонация и произношение остаются прежними — ниже становится только звук." }),
+    el("p", { class: "note", text:
+      "Замеры — ориентир, решает слух. Основной тон и спектральный центр (насколько голос «светлый») посчитаны по одному дублю каждой фразы. Разброс между дублями одной фразы у исходного клона, по четырём дублям рассказа: тон 2–8%, спектральный центр 1–4%. Если ни один вариант не похож на нынешнего Севу, надёжнее записать его заново (≥ 30 с ясной речи, как при настройке голоса в кабинете) и сделать новый клон." }),
+  );
+  const measures = DATA.older.measures[language] || {};
+  const base = measures.source || {};
+  const rows = ["source", ...DATA.older.keys.filter((key) => key !== "source")].map((key) => {
+    const value = measures[key] || {};
+    const pitch = percent(value.pitch, base.pitch);
+    const bright = percent(value.centroid, base.centroid);
+    const cls = (change) => change == null || key === "source" ? null : change <= -3 ? "down" : change >= 3 ? "up" : null;
+    return el("tr", {}, [
+      el("td", { text: OLDER[key].title }),
+      el("td", { text: value.pitch ? value.pitch + " Гц" : "—" }),
+      el("td", { class: cls(pitch), text: key === "source" ? "" : signed(pitch) }),
+      el("td", { text: value.centroid ? value.centroid + " Гц" : "—" }),
+      el("td", { class: cls(bright), text: key === "source" ? "" : signed(bright) }),
+      el("td", { text: key === "source" ? "" : signed(percent(value.seconds, base.seconds)) }),
+    ]);
+  });
+  findings.append(el("div", { class: "measures-wrap" }, [
+    el("table", { class: "measures" }, [
+      el("caption", { class: "note", text: "Замеры по всем фразам раздела, " + LANG[language].title + ". Синим — заметно ниже, оранжевым — заметно выше исходного." }),
+      el("thead", {}, [el("tr", {}, ["Вариант", "Основной тон", "", "Спектральный центр", "", "Длительность"].map((text) => el("th", { scope: "col", text })))]),
+      el("tbody", {}, rows),
+    ]),
+  ]));
+
+  const cards = DATA.older.variants.map((variant) => {
+    const value = measures[variant.key] || {};
+    const facts = [
+      "основной тон " + (value.pitch ?? "—") + " Гц (" + signed(percent(value.pitch, base.pitch)) + "), спектральный центр " +
+        (value.centroid ?? "—") + " Гц (" + signed(percent(value.centroid, base.centroid)) + "), " + LANG[language].title,
+    ];
+    let steps;
+    let listen = [];
+    if (variant.ratio) {
+      steps = [
+        "Берётся та же озвучка исходного клона, что в колонке «Исходный клон» (в окне дублей она есть как «до обработки»).",
+        "ffmpeg rubberband: <span class='mono'>pitch=" + variant.ratio + ":formant=" + variant.formant + "</span>. " + variant.prompt_ru,
+        "Темп и длительность не меняются. Никакой нейросети — только обработка звука, поэтому результат одинаков при каждом запуске.",
+      ];
+    } else {
+      steps = [
+        "ElevenLabs Voice Remixing исходного клона <span class='mono'>" + DATA.source.name + "</span>: новый голос по описанию изменений, исходный клон не меняется.",
+        "Описание: <span class='mono'>" + variant.prompt + "</span><br>По-русски: " + variant.prompt_ru,
+        "Сила ремикса <span class='mono'>prompt_strength=" + variant.strength + "</span> (" + strengthName(variant.strength) + "), seed " + DATA.older.seed + ". Превью озвучивают текст: «" + DATA.older.remix_text + "»",
+        "ElevenLabs вернул три превью, новым голосом сохранено первое (<span class='mono'>" + (variant.voice_id || "—") + "</span>).",
+        "Фразы озвучены этим голосом на " + DATA.models.eleven + " с языком фразы — как в книгах.",
+      ];
+      listen = (variant.previews || []).map((src, index) => ({ label: "Превью " + (index + 1) + (index === 0 ? " — сохранено голосом" : ""), src }));
+    }
+    const card = el("article", { class: "method-card", id: "method-" + variant.key }, [el("h3", { text: variant.title })]);
+    card.append(el("ol", {}, steps.map((step) => el("li", { html: step }))));
+    for (const item of listen) {
+      card.append(el("div", { class: "listen" }, [el("span", { text: item.label }), el("audio", { controls: true, preload: "none", src: audioUrl(item.src) })]));
+    }
+    card.append(el("div", { class: "facts" }, facts.map((fact) => el("span", { class: "mono", text: fact }))));
+    return card;
+  });
+  document.getElementById("older-methods").replaceChildren(...cards);
+
+  document.getElementById("older-blocked").replaceChildren(
+    el("p", { html: "<strong>Отклонено ElevenLabs.</strong> Эти ремиксы вернули 403 blocked_generation («запрос может нарушать правила безопасности»). Переформулировать их, чтобы обойти отказ, мы не стали." }),
+    ...DATA.older.blocked.map((item) => el("p", { html:
+      "«" + item.title + "», сила " + strengthName(item.strength) + " (" + item.strength + "): <span class='mono'>" + item.prompt + "</span><br><span class='muted'>" + item.prompt_ru + "</span>",
+    })),
+  );
+}
+
+// ——— запуск ———
+function renderLegend() {
+  const legend = document.getElementById("legend");
+  const short = {
+    source: "клон Севы по его русским записям, как сейчас в книгах",
+    tag: "тот же клон с тегом акцента перед фразой",
+    tts: "клон по записи, где исходный клон читает текст на языке",
+    sts: "клон по записи носителя с перенесённым тембром Севы",
+    "voxtral-seva": "Mistral, образец — настоящие записи Севы",
+    "voxtral-native": "Mistral, образец — запись «Носитель»",
+    "native-sts": "носитель читает фразу, тембр Севы переносится",
+    "openai-sts": "OpenAI (женский голос) читает, тембр Севы переносится",
+    "openai-male-sts": "то же мужским голосом OpenAI",
+    "openai-sts-pitch": "перенос OpenAI с тоном, поднятым до Севы",
+    "openai-male-sts-pitch": "мужской перенос OpenAI с тоном Севы",
+  };
+  legend.replaceChildren(...DATA.variants.map((variant) => el("a", { href: "#method-" + variant.key, "data-key": variant.key }, [
+    el("strong", { text: variant.title }), el("span", { text: short[variant.key] }),
+  ])));
+}
+
+const globalSpeed = document.getElementById("speed-global");
+globalSpeed.addEventListener("input", () => { speeds.global = Math.round(Number(globalSpeed.value) * 100) / 100; refreshSpeeds(); });
+document.getElementById("speed-global-reset").addEventListener("click", () => { speeds.global = SPEED.default; refreshSpeeds(); });
+
+document.getElementById("footer").append(
+  el("span", { class: "mono", text: "Исходный клон: " + DATA.source.name + " · " + DATA.source.voice_id }),
+  el("span", { class: "mono", text: "Модели: " + DATA.models.eleven + " · " + DATA.models.sts + " · " + DATA.models.openai + " · " + DATA.models.voxtral }),
+);
+for (const table of Object.values(TABLES)) renderSwitch(table);
+renderLegend();
+renderAllGrids();
+renderOlderNotes();
+if (OFFLINE) {
+  document.getElementById("intro").textContent =
+    "Два вопроса о голосе Севы: можно ли сделать нынешний клон старше и ниже без новой записи и как убрать акцент в английском и испанском. " +
+    (STATIC ? "Это снимок стенда на " + DATA.offline_date + "." : "Это файл-снимок стенда на " + DATA.offline_date + ": весь звук внутри, интернет не нужен.") +
+    " Перегенерация фраз и песочница для своей фразы будут в серверной версии стенда.";
+  document.getElementById("phrases-note").textContent =
+    "Кнопка ▶ играет выбранный дубль. Счётчик рядом — сколько дублей у ячейки: в нём можно послушать каждый и выбрать, какой играет в таблице. «Подряд» проигрывает все варианты строки.";
+  document.getElementById("sandbox").hidden = true;
+  document.getElementById("takes-new").hidden = true;
+} else {
+  renderSandboxVariants();
+  renderRuns();
+}
+renderMethods();
+</script>
+</body>
+</html>
