@@ -1,0 +1,5 @@
+# Исходники стенда — только локально: в stand/.env ключи ElevenLabs, OpenAI,
+# Mistral, в stand/data и stand/archive — голос Севы и его настоящие записи.
+# GitHub Pages публикует всё, что в репозитории, поэтому stand/ сюда не попадает.
+stand/
+.DS_Store
