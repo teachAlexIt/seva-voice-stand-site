@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Голос Севы · v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one column up to 1440px — toolbar, the phrase × voice table (scrolls sideways), sandbox, then the method notes. */
+:root {
+  --paper: #f3f6f6;
+  --surface: #ffffff;
+  --ink: #142024;
+  --muted: #586a70;
+  --line: #d6e0e1;
+  --accent: #0a6875;
+  --accent-soft: #dbecee;
+  --on-accent: #ffffff;
+  --warn: #9a3412;
+  --head: #e8f0f1;
+  --line-strong: #a9bcc0;
+  --row-hover: #f6fafa;
+  --font-ui: "Onest", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0e1517; --surface: #141e21; --ink: #e2ebec; --muted: #93a4a8; --line: #26353a;
+    --accent: #52b9c7; --accent-soft: #17363c; --on-accent: #0a1315; --warn: #fb923c;
+    --head: #1a282c; --line-strong: #41575d; --row-hover: #18252a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 0.9375rem/1.55 var(--font-ui); }
+.page {
+  max-width: 1440px; margin: 0 auto; display: grid; gap: 40px;
+  padding-block: 32px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 650; }
+h1 { font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.01em; }
+h2 { font-size: 1.125rem; }
+h3 { font-size: 0.9375rem; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 1.25em; display: grid; gap: 4px; }
+.mono { font-family: var(--font-data); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { display: grid; gap: 16px; }
+header { display: grid; gap: 12px; max-width: 75ch; }
+.note { max-width: 75ch; font-size: 0.8125rem; color: var(--muted); }
+
+.toolbar {
+  display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+}
+.switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--paper); }
+.switch button {
+  font: 500 0.875rem var(--font-ui); color: var(--muted); background: none; border: 0;
+  border-radius: 999px; padding: 6px 16px; cursor: pointer;
+}
+.switch button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); }
+.speed { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--muted); }
+.speed input { width: 180px; max-width: 40vw; accent-color: var(--accent); }
+.speed-value { min-width: 5ch; font-family: var(--font-data); font-variant-numeric: tabular-nums; color: var(--ink); }
+select, textarea, .speed-reset, .btn {
+  font: 500 0.8125rem var(--font-ui); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+select { padding: 4px 6px; max-width: 100%; }
+.speed-reset, .btn { padding: 6px 10px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; padding: 8px 16px; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.section-head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.findings { display: grid; gap: 12px; max-width: 90ch; }
+.findings p { font-size: 0.9375rem; }
+.measures-wrap { overflow-x: auto; }
+.measures { border-collapse: collapse; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.measures th, .measures td { padding: 6px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.measures th:first-child, .measures td:first-child { text-align: left; }
+.measures thead th { font-weight: 600; color: var(--muted); border-bottom: 2px solid var(--line-strong); }
+.measures .down { color: var(--accent); font-weight: 600; }
+.measures .up { color: var(--warn); }
+.sections { display: grid; gap: 48px; }
+.natives ul { margin-top: 6px; font-size: 0.875rem; }
+.v1-link { color: var(--accent); font-weight: 600; }
+
+/* Таблица фраз прокручивается в своей рамке в обе стороны: шапка с вариантами
+   и колонка с фразой стоят на месте, колонки разделены линиями, семейства — толще. */
+.matrix-wrap {
+  overflow: auto; max-height: calc(100vh - 32px); max-width: 100%;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface);
+}
+.matrix { border-collapse: separate; border-spacing: 0; min-width: 100%; }
+.matrix th, .matrix td {
+  padding: 10px 12px; text-align: left; vertical-align: middle;
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.matrix thead th {
+  position: sticky; top: 0; z-index: 3; vertical-align: bottom; min-width: 156px;
+  background: var(--head); border-bottom: 2px solid var(--line-strong);
+  font-size: 0.8125rem; font-weight: 650; line-height: 1.3;
+}
+.matrix thead .family {
+  display: block; margin-bottom: 4px; font-size: 0.6875rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+}
+.matrix .phrase-cell {
+  position: sticky; left: 0; z-index: 2; min-width: 250px; max-width: 290px;
+  background: var(--surface); border-right: 2px solid var(--line-strong); font-weight: 400;
+}
+.matrix thead th.phrase-cell { z-index: 4; background: var(--head); }
+.matrix .family-start { border-left: 2px solid var(--line-strong); }
+.matrix tr.group th {
+  padding: 0; background: var(--accent-soft); border-bottom: 1px solid var(--line-strong);
+}
+.group-inner {
+  position: sticky; left: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center;
+  width: max-content; max-width: 100vw; padding: 10px 12px;
+}
+.group-inner h3 { font-size: 0.875rem; }
+.matrix tbody tr.phrase-row:hover > * { background: var(--row-hover); }
+.matrix tr.is-current > .phrase-cell, .matrix thead th.is-current { background: var(--accent-soft); color: var(--accent); }
+.matrix thead th.is-current .family { color: var(--accent); }
+.phrase { display: grid; gap: 4px; min-width: 0; }
+.phrase .target { font-size: 1.0625rem; font-weight: 600; }
+.phrase .ru, .phrase .own-speed { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 0.8125rem; color: var(--muted); }
+.phrase .own-speed select { font-size: 0.75rem; padding: 2px 4px; color: var(--muted); }
+.cell { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; min-width: 0; }
+
+.play {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; justify-content: flex-start;
+  max-width: 100%; min-height: 36px; padding: 4px 12px; border-radius: 8px; cursor: pointer; text-align: left;
+  font: 500 0.8125rem var(--font-ui); font-variant-numeric: tabular-nums;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+}
+.play svg { width: 12px; height: 12px; flex: none; fill: currentColor; }
+.play .label { display: none; }
+.play.method { border-color: var(--accent); color: var(--accent); }
+.play.is-playing { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.play.mini { min-height: 26px; padding: 0 8px; font-size: 0.75rem; }
+.play .caption { color: var(--muted); }
+.play.is-playing .caption { color: inherit; }
+.takes {
+  min-height: 26px; padding: 0 8px; border-radius: 999px; cursor: pointer;
+  font: 500 0.75rem var(--font-data); color: var(--muted); background: var(--paper); border: 1px solid var(--line);
+}
+.takes.busy { color: var(--accent); border-color: var(--accent); }
+.empty { color: var(--muted); font-size: 0.8125rem; }
+.series { justify-content: center; background: var(--accent-soft); border-color: transparent; color: var(--ink); }
+:is(.play, .takes, .btn, .speed-reset, .switch button, select, textarea, summary, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+dialog {
+  width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 64px);
+  border: 1px solid var(--line); border-radius: 12px; padding: 0; background: var(--surface); color: var(--ink);
+}
+dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+.dialog-body { display: grid; gap: 16px; padding: 20px; }
+.dialog-head { display: flex; gap: 12px; justify-content: space-between; align-items: start; }
+.take-list { display: grid; gap: 8px; }
+.take {
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+}
+.take.picked { border-color: var(--accent); }
+.take .meta { font-size: 0.75rem; color: var(--muted); }
+.take .error { color: var(--warn); font-size: 0.75rem; overflow-wrap: anywhere; }
+.take label { display: inline-flex; gap: 6px; align-items: center; font-size: 0.75rem; color: var(--muted); }
+
+.sandbox-form { display: grid; gap: 12px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.sandbox-form textarea { width: 100%; min-height: 64px; padding: 8px 10px; font: 400 1rem var(--font-ui); resize: vertical; }
+.form-row { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.checks label { display: inline-flex; gap: 6px; align-items: center; font-size: 0.8125rem; }
+.runs { display: grid; gap: 12px; }
+.run { display: grid; gap: 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.run-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.run-text { font-size: 1.0625rem; font-weight: 600; }
+.run-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px 12px; }
+.run-item { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.run-item .name { font-size: 0.75rem; color: var(--muted); }
+.run-item .error { color: var(--warn); font-size: 0.75rem; overflow-wrap: anywhere; }
+.status { font-size: 0.8125rem; color: var(--muted); }
+.status.error { color: var(--warn); }
+
+.methods { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.method-card {
+  display: grid; gap: 10px; align-content: start; padding: 16px; scroll-margin-top: 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0;
+}
+.method-card ol { font-size: 0.875rem; }
+.method-card .facts { font-size: 0.75rem; color: var(--muted); display: grid; gap: 2px; }
+.method-card audio { width: 100%; height: 36px; }
+.method-card .listen { display: grid; gap: 4px; }
+.method-card .listen span { font-size: 0.75rem; color: var(--muted); }
+.limits { display: grid; gap: 8px; max-width: 75ch; font-size: 0.875rem; }
+details { max-width: 75ch; }
+summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+details p { margin-top: 8px; }
+footer { display: grid; gap: 4px; color: var(--muted); font-size: 0.8125rem; overflow-wrap: anywhere; }
+
+/* На телефоне — карточка фразы с подписанными кнопками, без прокрутки вбок. */
+@media (max-width: 760px) {
+  .matrix .phrase-cell { min-width: 170px; max-width: 200px; }
+  .matrix thead th { min-width: 120px; }
+  .methods { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .play { transition: background-color 120ms ease, color 120ms ease; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <span class="eyebrow">Стенд для специалиста · версия 2</span>
+    <h1>Голос Севы: новый клон</h1>
+    <p id="intro">Стенд на новом клоне Севы — «Seva V2», сделан 06.11.2026 по свежей записи. «Новый клон» — как он звучит по-русски на моделях eleven_v4 и eleven_v4 Turbo. «Перенос: носитель» — фразы книги на английском и аргентинском испанском: фразу читает носитель языка, тембр нового клона переносится на запись. Любую фразу можно перегенерировать: прошлые дубли сохраняются, и видно, держится ли результат или удачный дубль был случайностью.</p>
+    <p class="note"><a href="../v1/" class="v1-link">Первая версия стенда</a> — старый клон: «Голос старше» и 11 способов убрать акцент.</p>
+  </header>
+  <div class="toolbar">
+    <div class="speed">
+      <label for="speed-global">Общая скорость</label>
+      <input type="range" id="speed-global" min="0.5" max="1.5" step="0.05">
+      <output class="speed-value" for="speed-global" id="speed-global-value"></output>
+      <button type="button" class="speed-reset" id="speed-global-reset">0,80×</button>
+    </div>
+    <p class="note">У раздела и у отдельной фразы можно выставить свою скорость, иначе действует общая. Высота голоса при этом не меняется — так же работает atempo в настройках книг.</p>
+  </div>
+
+  <div id="sections" class="sections"></div>
+
+  <section aria-labelledby="sandbox-title" id="sandbox">
+    <h2 id="sandbox-title">Песочница</h2>
+    <form class="sandbox-form" id="sandbox-form">
+      <label for="sandbox-text" class="eyebrow">Фраза</label>
+      <textarea id="sandbox-text" required placeholder="Например: Seva, say: I like apples."></textarea>
+      <div class="form-row">
+        <label class="speed" for="sandbox-lang">Язык
+          <select id="sandbox-lang"></select>
+        </label>
+        <span class="status" id="sandbox-count"></span>
+      </div>
+      <div class="checks" id="sandbox-variants"></div>
+      <div class="form-row">
+        <button type="submit" class="btn primary" id="sandbox-submit">Озвучить</button>
+        <span class="status" id="sandbox-status" role="status"></span>
+      </div>
+    </form>
+    <div class="runs" id="runs"></div>
+  </section>
+
+  <footer id="footer"></footer>
+</main>
+
+<dialog id="takes-dialog" aria-labelledby="takes-title">
+  <div class="dialog-body">
+    <div class="dialog-head">
+      <div>
+        <h2 id="takes-title"></h2>
+        <p class="muted" id="takes-phrase"></p>
+      </div>
+      <button type="button" class="btn" id="takes-close">Закрыть</button>
+    </div>
+    <div class="take-list" id="takes-list"></div>
+    <div class="form-row">
+      <button type="button" class="btn primary" id="takes-new">Сгенерировать ещё дубль</button>
+      <span class="status" id="takes-status" role="status"></span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const DATA = {"languages": [{"code": "en", "title": "English", "accent_tag": "[American accent]", "native": {"voice_id": "cgSgspJ2msm6clMCkdW9", "name": "Jessica", "about": "готовый голос ElevenLabs, американский английский"}, "pitch": {"openai-sts-pitch": 1.33, "openai-male-sts-pitch": 1.29}, "openai_instructions": "Speak as a native speaker of American English with a clear, natural General American accent. Cheerful and friendly, calm pace, simple clear pronunciation.", "variants": ["source", "tag", "tts", "sts", "voxtral-seva", "voxtral-native", "native-sts", "openai-sts", "openai-male-sts", "openai-sts-pitch", "openai-male-sts-pitch"], "reference_text": "Hi! My name is Seva. Today I want to tell you about my favorite day. In the morning I wake up early, eat pancakes with my mom, and look out the window. If the weather is nice, we go to the park. I love the swings, the big red slide, and the little ducks on the pond. Sometimes I count them: one, two, three, four, five! Then we walk home, read a book together, and I tell my dad everything. What's your favorite day? Do you want to play with me?"}, {"code": "es-AR", "title": "Español (AR)", "accent_tag": "[Argentine accent]", "native": {"voice_id": "p7AwDmKvTdoHTBuueGvP", "name": "Malena", "about": "библиотека ElevenLabs, риоплатский испанский"}, "pitch": {"openai-sts-pitch": 1.05, "openai-male-sts-pitch": 1.1}, "openai_instructions": "Speak as a native speaker from Buenos Aires, Argentina, in Rioplatense Spanish with a natural porteño accent: pronounce 'll' and 'y' as 'sh' (sheísmo) and use Argentine intonation. Cheerful and friendly, calm pace, simple clear pronunciation.", "variants": ["source", "tag", "tts", "sts", "voxtral-seva", "voxtral-native", "native-sts", "openai-sts", "openai-male-sts", "openai-sts-pitch", "openai-male-sts-pitch"], "reference_text": "¡Hola! Me llamo Seva. Hoy te quiero contar cómo es mi día favorito. A la mañana me levanto temprano, desayuno medialunas con mi mamá y miro por la ventana. Si hace lindo, vamos a la plaza. Me encantan las hamacas, el tobogán grande y los patitos del lago. A veces los cuento: uno, dos, tres, cuatro, cinco. Después volvemos caminando por la calle, leemos un libro juntos y yo le cuento todo a mi papá. ¿Y vos? ¿Cuál es tu día favorito? ¿Querés jugar conmigo?"}, {"code": "ru", "title": "Русский", "accent_tag": "", "native": null, "pitch": {}, "openai_instructions": "Speak as a native Russian speaker with natural, clear Russian pronunciation. Cheerful and friendly, calm pace.", "variants": ["source", "voxtral-seva", "openai-sts", "openai-male-sts"], "reference_text": ""}], "variants": [{"key": "v2-v4", "title": "Новый клон · v4", "family": "Seva V2"}, {"key": "v2-turbo", "title": "Новый клон · v4 Turbo", "family": "Seva V2"}, {"key": "source", "title": "Старый клон · v4", "family": "Для сравнения"}, {"key": "nat-ben", "title": "Ben", "family": "Перенос: носитель", "raw": true}, {"key": "nat-julian", "title": "Julian", "family": "Перенос: носитель", "raw": true}, {"key": "nat-justin", "title": "Justin", "family": "Перенос: носитель", "raw": true}, {"key": "nat-brooks", "title": "Brooks", "family": "Перенос: носитель", "raw": true}, {"key": "nat-eddie", "title": "Eddie", "family": "Перенос: носитель", "raw": true}, {"key": "nat-kaelen", "title": "Kaelen", "family": "Перенос: носитель", "raw": true}, {"key": "nat-caleb", "title": "Caleb", "family": "Перенос: носитель", "raw": true}, {"key": "nat-colton", "title": "Colton", "family": "Перенос: носитель", "raw": true}, {"key": "nat-lawrence", "title": "Lawrence", "family": "Перенос: носитель", "raw": true}, {"key": "nat-ryan", "title": "Ryan", "family": "Перенос: носитель", "raw": true}, {"key": "nat-derek", "title": "Derek", "family": "Перенос: носитель", "raw": true}, {"key": "nat-tyler", "title": "Tyler", "family": "Перенос: носитель", "raw": true}, {"key": "nat-toby", "title": "Toby", "family": "Перенос: носитель", "raw": true}, {"key": "nat-tomas", "title": "Tomas", "family": "Перенос: носитель", "raw": true}, {"key": "nat-dante", "title": "Dante", "family": "Перенос: носитель", "raw": true}, {"key": "nat-nikolas", "title": "Nikolas Kafka", "family": "Перенос: носитель", "raw": true}, {"key": "nat-bautista", "title": "Bautista", "family": "Перенос: носитель", "raw": true}, {"key": "nat-masy", "title": "Masy", "family": "Перенос: носитель", "raw": true}, {"key": "nat-malena", "title": "Malena", "family": "Перенос: носитель", "raw": true}], "phrases": [{"key": "001_word_i", "group": "word", "texts": {"ru": "я", "en": "I", "es-AR": "yo"}}, {"key": "002_word_me_accusative", "group": "word", "texts": {"ru": "меня", "en": "me", "es-AR": "me"}}, {"key": "016_phrase_this_is_me", "group": "phrase", "texts": {"ru": "Это я.", "en": "This is me.", "es-AR": "Este soy yo."}}, {"key": "017_phrase_my_name", "group": "phrase", "texts": {"ru": "Меня зовут Сева.", "en": "My name is Seva.", "es-AR": "Me llamo Seva."}}, {"key": "023_phrase_i_am_from", "group": "phrase", "texts": {"ru": "Я из Аргентины.", "en": "I am from Argentina.", "es-AR": "Soy de Argentina."}}, {"key": "025_question_what_is_your_name", "group": "question", "texts": {"ru": "Как тебя зовут?", "en": "What is your name?", "es-AR": "¿Cómo te llamás?"}}, {"key": "029_question_where_do_you_live", "group": "question", "texts": {"ru": "Где ты живёшь?", "en": "Where do you live?", "es-AR": "¿Dónde vivís?"}}, {"key": "030_question_where_are_you_from", "group": "question", "texts": {"ru": "Откуда ты?", "en": "Where are you from?", "es-AR": "¿De dónde sos?"}}, {"key": "invite_say", "group": "prompt", "texts": {"ru": "Сева, скажи:", "en": "Seva, say:", "es-AR": "Seva, decí:"}}, {"key": "invite_ask", "group": "prompt", "texts": {"ru": "Сева, спроси:", "en": "Seva, ask:", "es-AR": "Seva, preguntá:"}}, {"key": "019_phrase_my_full_name", "group": "phrase", "texts": {"ru": "Мои полные имя и фамилия — Всеволод Стефанюк.", "en": "My full name is Vsevolod Stefanyuk.", "es-AR": "Mi nombre completo y apellido son Vsevolod Stefanyuk."}}, {"key": "yo_me_llamo", "group": "phrase", "texts": {"ru": "Меня зовут Сева.", "es-AR": "Yo me llamo Seva."}}, {"key": "story_park", "group": "story", "texts": {"ru": "Привет! Меня зовут Сева. Сегодня мы с мамой гуляли в парке, кормили уток и катались на качелях.", "en": "Hi! My name is Seva. Today my mom and I walked in the park, fed the ducks and played on the swings.", "es-AR": "¡Hola! Me llamo Seva. Hoy con mi mamá paseamos por la plaza, les dimos de comer a los patos y jugamos en las hamacas."}}], "takes": {"001_word_i": {"ru": {"source": [{"n": 1, "src": "takes/001_word_i/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:38+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.6}], "v2-v4": [{"n": 1, "src": "takes/001_word_i/ru/v2-v4-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-11-06T11:11:56+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/001_word_i/ru/v2-turbo-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-11-06T11:11:56+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/001_word_i/en/v2-v4-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-11-06T11:12:04+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/001_word_i/en/nat-ben-1.mp3", "raw": "takes/001_word_i/en/nat-ben-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/001_word_i/en/nat-julian-1.mp3", "raw": "takes/001_word_i/en/nat-julian-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/001_word_i/en/nat-justin-1.mp3", "raw": "takes/001_word_i/en/nat-justin-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:07+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/001_word_i/en/nat-brooks-1.mp3", "raw": "takes/001_word_i/en/nat-brooks-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:08+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/001_word_i/en/nat-eddie-1.mp3", "raw": "takes/001_word_i/en/nat-eddie-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:12:08+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/001_word_i/en/nat-kaelen-1.mp3", "raw": "takes/001_word_i/en/nat-kaelen-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:10+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/001_word_i/en/nat-caleb-1.mp3", "raw": "takes/001_word_i/en/nat-caleb-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:12:10+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/001_word_i/en/nat-colton-1.mp3", "raw": "takes/001_word_i/en/nat-colton-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:10+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/001_word_i/en/nat-lawrence-1.mp3", "raw": "takes/001_word_i/en/nat-lawrence-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:12:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/001_word_i/en/nat-ryan-1.mp3", "raw": "takes/001_word_i/en/nat-ryan-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/001_word_i/en/nat-derek-1.mp3", "raw": "takes/001_word_i/en/nat-derek-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/001_word_i/en/nat-toby-1.mp3", "raw": "takes/001_word_i/en/nat-toby-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:12:14+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/001_word_i/en/nat-tyler-1.mp3", "raw": "takes/001_word_i/en/nat-tyler-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:16:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/001_word_i/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 0.9, "created": "2026-11-06T11:14:35+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/001_word_i/es-AR/nat-tomas-1.mp3", "raw": "takes/001_word_i/es-AR/nat-tomas-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:14:44+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/001_word_i/es-AR/nat-dante-1.mp3", "raw": "takes/001_word_i/es-AR/nat-dante-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:14:47+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/001_word_i/es-AR/nat-nikolas-1.mp3", "raw": "takes/001_word_i/es-AR/nat-nikolas-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:14:52+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/001_word_i/es-AR/nat-bautista-1.mp3", "raw": "takes/001_word_i/es-AR/nat-bautista-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:14:53+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/001_word_i/es-AR/nat-masy-1.mp3", "raw": "takes/001_word_i/es-AR/nat-masy-1-raw.mp3", "seconds": 0.5, "created": "2026-11-06T11:14:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/001_word_i/es-AR/nat-malena-1.mp3", "raw": "takes/001_word_i/es-AR/nat-malena-1-raw.mp3", "seconds": 0.6, "created": "2026-11-06T11:14:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "002_word_me_accusative": {"ru": {"source": [{"n": 1, "src": "takes/002_word_me_accusative/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:39+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 0.8}], "v2-v4": [{"n": 1, "src": "takes/002_word_me_accusative/ru/v2-v4-1.mp3", "raw": null, "seconds": 0.8, "created": "2026-11-06T11:11:57+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/002_word_me_accusative/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-11-06T11:11:57+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/002_word_me_accusative/en/v2-v4-1.mp3", "raw": null, "seconds": 0.7, "created": "2026-11-06T11:12:14+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-ben-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-ben-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:15+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-julian-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-julian-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:16+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-justin-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-justin-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:17+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-brooks-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-brooks-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:12:18+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-eddie-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-eddie-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:18+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-kaelen-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-kaelen-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:19+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-caleb-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-caleb-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:20+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-colton-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-colton-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:12:21+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-lawrence-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-lawrence-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:21+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-ryan-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-ryan-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:22+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-derek-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-derek-1-raw.mp3", "seconds": 0.6, "created": "2026-11-06T11:12:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-tyler-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-tyler-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:12:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/002_word_me_accusative/en/nat-toby-1.mp3", "raw": "takes/002_word_me_accusative/en/nat-toby-1-raw.mp3", "seconds": 0.8, "created": "2026-11-06T11:12:24+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 0.7, "created": "2026-11-06T11:14:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/nat-tomas-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/nat-tomas-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:14:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/nat-dante-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/nat-dante-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:14:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/nat-nikolas-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/nat-nikolas-1-raw.mp3", "seconds": 0.7, "created": "2026-11-06T11:14:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/nat-bautista-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/nat-bautista-1-raw.mp3", "seconds": 0.6, "created": "2026-11-06T11:14:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/nat-masy-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/nat-masy-1-raw.mp3", "seconds": 0.5, "created": "2026-11-06T11:15:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/002_word_me_accusative/es-AR/nat-malena-1.mp3", "raw": "takes/002_word_me_accusative/es-AR/nat-malena-1-raw.mp3", "seconds": 0.6, "created": "2026-11-06T11:15:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "016_phrase_this_is_me": {"ru": {"source": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:42+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "v2-v4": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-11-06T11:11:57+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/016_phrase_this_is_me/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.0, "created": "2026-11-06T11:11:57+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/v2-v4-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-11-06T11:12:24+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-ben-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-ben-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:12:25+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-julian-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-julian-1-raw.mp3", "seconds": 1.0, "created": "2026-11-06T11:12:26+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-justin-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-justin-1-raw.mp3", "seconds": 1.0, "created": "2026-11-06T11:12:27+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-brooks-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-brooks-1-raw.mp3", "seconds": 1.0, "created": "2026-11-06T11:12:28+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-eddie-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-eddie-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:12:29+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-kaelen-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-kaelen-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:12:29+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-caleb-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-caleb-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:12:30+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-colton-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-colton-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:12:31+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-lawrence-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-lawrence-1-raw.mp3", "seconds": 1.0, "created": "2026-11-06T11:12:32+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-ryan-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-ryan-1-raw.mp3", "seconds": 1.0, "created": "2026-11-06T11:12:33+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-derek-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-derek-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:12:34+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-tyler-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-tyler-1-raw.mp3", "seconds": 1.0, "created": "2026-11-06T11:12:34+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/016_phrase_this_is_me/en/nat-toby-1.mp3", "raw": "takes/016_phrase_this_is_me/en/nat-toby-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:12:35+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:15:01+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/nat-tomas-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:15:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/nat-dante-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/nat-dante-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/nat-nikolas-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:15:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/nat-bautista-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:15:05+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/nat-masy-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/nat-masy-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/016_phrase_this_is_me/es-AR/nat-malena-1.mp3", "raw": "takes/016_phrase_this_is_me/es-AR/nat-malena-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "017_phrase_my_name": {"ru": {"source": [{"n": 1, "src": "takes/017_phrase_my_name/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:43+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.7}], "v2-v4": [{"n": 1, "src": "takes/017_phrase_my_name/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-11-06T11:11:58+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/017_phrase_my_name/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-11-06T11:11:58+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/017_phrase_my_name/en/v2-v4-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:12:35+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-ben-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-ben-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:12:37+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-julian-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-julian-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:12:38+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-justin-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-justin-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:39+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-brooks-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-brooks-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:39+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-eddie-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-eddie-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:41+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-kaelen-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-kaelen-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-caleb-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-caleb-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-colton-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-colton-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:44+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-lawrence-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-lawrence-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:44+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-ryan-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-ryan-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:12:45+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-derek-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-derek-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:46+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-tyler-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-tyler-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:12:47+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/017_phrase_my_name/en/nat-toby-1.mp3", "raw": "takes/017_phrase_my_name/en/nat-toby-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:12:48+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.6, "created": "2026-11-06T11:15:07+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/nat-tomas-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:15:08+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/nat-dante-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/nat-dante-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:08+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/nat-nikolas-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:15:09+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/nat-bautista-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:15:10+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/nat-masy-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/nat-masy-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:11+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/017_phrase_my_name/es-AR/nat-malena-1.mp3", "raw": "takes/017_phrase_my_name/es-AR/nat-malena-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "023_phrase_i_am_from": {"ru": {"source": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:45+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "v2-v4": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:11:58+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/023_phrase_i_am_from/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:11:58+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/v2-v4-1.mp3", "raw": null, "seconds": 1.9, "created": "2026-11-06T11:12:48+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-ben-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-ben-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:12:49+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-julian-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-julian-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:12:50+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-justin-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-justin-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:12:50+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-brooks-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-brooks-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:12:52+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-eddie-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-eddie-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:12:53+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-kaelen-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-kaelen-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:12:53+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-caleb-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-caleb-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:12:54+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-colton-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-colton-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:12:56+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-lawrence-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-lawrence-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:12:56+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-ryan-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-ryan-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:12:57+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-derek-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-derek-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:12:58+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-tyler-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-tyler-1-raw.mp3", "seconds": 1.8, "created": "2026-11-06T11:12:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/023_phrase_i_am_from/en/nat-toby-1.mp3", "raw": "takes/023_phrase_i_am_from/en/nat-toby-1-raw.mp3", "seconds": 1.8, "created": "2026-11-06T11:13:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-11-06T11:15:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/nat-tomas-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:13+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/nat-dante-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/nat-dante-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:15:15+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/nat-nikolas-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:15:15+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/nat-bautista-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:15:16+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/nat-masy-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/nat-masy-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:17+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/023_phrase_i_am_from/es-AR/nat-malena-1.mp3", "raw": "takes/023_phrase_i_am_from/es-AR/nat-malena-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:17+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "025_question_what_is_your_name": {"ru": {"source": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:46+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.4}], "v2-v4": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-11-06T11:11:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/025_question_what_is_your_name/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-11-06T11:11:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/v2-v4-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-11-06T11:13:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-ben-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-ben-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:01+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-julian-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-julian-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:02+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-justin-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-justin-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-brooks-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-brooks-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:04+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-eddie-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-eddie-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:04+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-kaelen-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-kaelen-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:05+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-caleb-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-caleb-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-colton-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-colton-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:07+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-lawrence-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-lawrence-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:08+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-ryan-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-ryan-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:09+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-derek-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-derek-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:09+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-tyler-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-tyler-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:10+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/025_question_what_is_your_name/en/nat-toby-1.mp3", "raw": "takes/025_question_what_is_your_name/en/nat-toby-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:13:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-11-06T11:15:17+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/nat-tomas-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:19+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/nat-dante-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/nat-dante-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:20+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/nat-nikolas-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:20+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/nat-bautista-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:22+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/nat-masy-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/nat-masy-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:22+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/025_question_what_is_your_name/es-AR/nat-malena-1.mp3", "raw": "takes/025_question_what_is_your_name/es-AR/nat-malena-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "029_question_where_do_you_live": {"ru": {"source": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:48+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.5}], "v2-v4": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-11-06T11:11:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/029_question_where_do_you_live/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-11-06T11:11:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/v2-v4-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-11-06T11:13:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-ben-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-ben-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:13+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-julian-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-julian-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:13:14+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-justin-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-justin-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:14+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-brooks-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-brooks-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:15+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-eddie-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-eddie-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:16+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-kaelen-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-kaelen-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:13:17+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-caleb-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-caleb-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:13:18+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-colton-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-colton-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:13:19+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-lawrence-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-lawrence-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:19+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-ryan-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-ryan-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:13:20+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-derek-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-derek-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:21+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-tyler-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-tyler-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:22+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/029_question_where_do_you_live/en/nat-toby-1.mp3", "raw": "takes/029_question_where_do_you_live/en/nat-toby-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-11-06T11:15:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/nat-tomas-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:25+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/nat-dante-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/nat-dante-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:25+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/nat-nikolas-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:25+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/nat-bautista-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:27+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/nat-masy-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/nat-masy-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:28+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/029_question_where_do_you_live/es-AR/nat-malena-1.mp3", "raw": "takes/029_question_where_do_you_live/es-AR/nat-malena-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:28+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "030_question_where_are_you_from": {"ru": {"source": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:03:49+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.1}], "v2-v4": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.1, "created": "2026-11-06T11:12:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/030_question_where_are_you_from/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.2, "created": "2026-11-06T11:12:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/v2-v4-1.mp3", "raw": null, "seconds": 1.4, "created": "2026-11-06T11:13:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-ben-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-ben-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:24+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-julian-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-julian-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:25+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-justin-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-justin-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:25+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-brooks-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-brooks-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:27+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-eddie-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-eddie-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:27+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-kaelen-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-kaelen-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:28+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-caleb-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-caleb-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:13:29+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-colton-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-colton-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:31+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-lawrence-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-lawrence-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:31+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-ryan-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-ryan-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:31+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-derek-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-derek-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:33+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-tyler-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-tyler-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:33+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/030_question_where_are_you_from/en/nat-toby-1.mp3", "raw": "takes/030_question_where_are_you_from/en/nat-toby-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:13:34+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.3, "created": "2026-11-06T11:15:28+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/nat-tomas-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:30+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/nat-dante-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/nat-dante-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:31+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/nat-nikolas-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.2, "created": "2026-11-06T11:15:31+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/nat-bautista-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:33+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/nat-masy-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/nat-masy-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:33+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/030_question_where_are_you_from/es-AR/nat-malena-1.mp3", "raw": "takes/030_question_where_are_you_from/es-AR/nat-malena-1-raw.mp3", "seconds": 1.1, "created": "2026-11-06T11:15:34+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "invite_say": {"ru": {"source": [{"n": 1, "src": "takes/invite_say/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:18+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.6}], "v2-v4": [{"n": 1, "src": "takes/invite_say/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.6, "created": "2026-11-06T11:12:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/invite_say/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.5, "created": "2026-11-06T11:12:01+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/invite_say/en/v2-v4-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-11-06T11:13:34+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/invite_say/en/nat-ben-1.mp3", "raw": "takes/invite_say/en/nat-ben-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:13:36+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/invite_say/en/nat-julian-1.mp3", "raw": "takes/invite_say/en/nat-julian-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:13:36+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/invite_say/en/nat-justin-1.mp3", "raw": "takes/invite_say/en/nat-justin-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:37+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/invite_say/en/nat-brooks-1.mp3", "raw": "takes/invite_say/en/nat-brooks-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:38+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/invite_say/en/nat-eddie-1.mp3", "raw": "takes/invite_say/en/nat-eddie-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:39+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/invite_say/en/nat-kaelen-1.mp3", "raw": "takes/invite_say/en/nat-kaelen-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:13:39+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/invite_say/en/nat-caleb-1.mp3", "raw": "takes/invite_say/en/nat-caleb-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:41+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/invite_say/en/nat-colton-1.mp3", "raw": "takes/invite_say/en/nat-colton-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:13:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/invite_say/en/nat-lawrence-1.mp3", "raw": "takes/invite_say/en/nat-lawrence-1-raw.mp3", "seconds": 1.8, "created": "2026-11-06T11:13:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/invite_say/en/nat-ryan-1.mp3", "raw": "takes/invite_say/en/nat-ryan-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:13:44+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/invite_say/en/nat-derek-1.mp3", "raw": "takes/invite_say/en/nat-derek-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:13:44+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/invite_say/en/nat-tyler-1.mp3", "raw": "takes/invite_say/en/nat-tyler-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:44+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/invite_say/en/nat-toby-1.mp3", "raw": "takes/invite_say/en/nat-toby-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:13:46+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/invite_say/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:15:34+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/invite_say/es-AR/nat-tomas-1.mp3", "raw": "takes/invite_say/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:36+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/invite_say/es-AR/nat-dante-1.mp3", "raw": "takes/invite_say/es-AR/nat-dante-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:37+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/invite_say/es-AR/nat-nikolas-1.mp3", "raw": "takes/invite_say/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:37+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/invite_say/es-AR/nat-bautista-1.mp3", "raw": "takes/invite_say/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:39+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/invite_say/es-AR/nat-masy-1.mp3", "raw": "takes/invite_say/es-AR/nat-masy-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:15:39+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/invite_say/es-AR/nat-malena-1.mp3", "raw": "takes/invite_say/es-AR/nat-malena-1-raw.mp3", "seconds": 1.3, "created": "2026-11-06T11:15:39+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "invite_ask": {"ru": {"source": [{"n": 1, "src": "takes/invite_ask/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:23+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.8}], "v2-v4": [{"n": 1, "src": "takes/invite_ask/ru/v2-v4-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:12:01+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/invite_ask/ru/v2-turbo-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:12:01+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/invite_ask/en/v2-v4-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:13:46+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/invite_ask/en/nat-ben-1.mp3", "raw": "takes/invite_ask/en/nat-ben-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:47+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/invite_ask/en/nat-julian-1.mp3", "raw": "takes/invite_ask/en/nat-julian-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:13:48+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/invite_ask/en/nat-justin-1.mp3", "raw": "takes/invite_ask/en/nat-justin-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:49+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/invite_ask/en/nat-brooks-1.mp3", "raw": "takes/invite_ask/en/nat-brooks-1-raw.mp3", "seconds": 1.8, "created": "2026-11-06T11:13:50+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/invite_ask/en/nat-eddie-1.mp3", "raw": "takes/invite_ask/en/nat-eddie-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:13:50+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/invite_ask/en/nat-kaelen-1.mp3", "raw": "takes/invite_ask/en/nat-kaelen-1-raw.mp3", "seconds": 1.8, "created": "2026-11-06T11:13:52+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/invite_ask/en/nat-caleb-1.mp3", "raw": "takes/invite_ask/en/nat-caleb-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:13:52+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/invite_ask/en/nat-colton-1.mp3", "raw": "takes/invite_ask/en/nat-colton-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:13:54+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/invite_ask/en/nat-lawrence-1.mp3", "raw": "takes/invite_ask/en/nat-lawrence-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:13:54+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/invite_ask/en/nat-ryan-1.mp3", "raw": "takes/invite_ask/en/nat-ryan-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:13:55+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/invite_ask/en/nat-derek-1.mp3", "raw": "takes/invite_ask/en/nat-derek-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:13:56+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/invite_ask/en/nat-tyler-1.mp3", "raw": "takes/invite_ask/en/nat-tyler-1-raw.mp3", "seconds": 1.8, "created": "2026-11-06T11:13:57+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/invite_ask/en/nat-toby-1.mp3", "raw": "takes/invite_ask/en/nat-toby-1-raw.mp3", "seconds": 1.8, "created": "2026-11-06T11:13:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/invite_ask/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.8, "created": "2026-11-06T11:15:40+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/invite_ask/es-AR/nat-tomas-1.mp3", "raw": "takes/invite_ask/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/invite_ask/es-AR/nat-dante-1.mp3", "raw": "takes/invite_ask/es-AR/nat-dante-1-raw.mp3", "seconds": 1.7, "created": "2026-11-06T11:15:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/invite_ask/es-AR/nat-nikolas-1.mp3", "raw": "takes/invite_ask/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:15:42+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/invite_ask/es-AR/nat-bautista-1.mp3", "raw": "takes/invite_ask/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:44+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/invite_ask/es-AR/nat-masy-1.mp3", "raw": "takes/invite_ask/es-AR/nat-masy-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:45+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/invite_ask/es-AR/nat-malena-1.mp3", "raw": "takes/invite_ask/es-AR/nat-malena-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:45+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "019_phrase_my_full_name": {"ru": {"source": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:30+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 4.3}], "v2-v4": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/v2-v4-1.mp3", "raw": null, "seconds": 4.3, "created": "2026-11-06T11:12:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/019_phrase_my_full_name/ru/v2-turbo-1.mp3", "raw": null, "seconds": 4.6, "created": "2026-11-06T11:12:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/v2-v4-1.mp3", "raw": null, "seconds": 3.4, "created": "2026-11-06T11:13:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-ben-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-ben-1-raw.mp3", "seconds": 2.6, "created": "2026-11-06T11:14:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-julian-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-julian-1-raw.mp3", "seconds": 2.6, "created": "2026-11-06T11:14:01+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-justin-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-justin-1-raw.mp3", "seconds": 2.8, "created": "2026-11-06T11:14:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-brooks-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-brooks-1-raw.mp3", "seconds": 2.8, "created": "2026-11-06T11:14:03+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-eddie-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-eddie-1-raw.mp3", "seconds": 2.9, "created": "2026-11-06T11:14:04+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-kaelen-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-kaelen-1-raw.mp3", "seconds": 2.7, "created": "2026-11-06T11:14:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-caleb-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-caleb-1-raw.mp3", "seconds": 2.7, "created": "2026-11-06T11:14:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-colton-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-colton-1-raw.mp3", "seconds": 2.6, "created": "2026-11-06T11:14:07+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-lawrence-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-lawrence-1-raw.mp3", "seconds": 2.7, "created": "2026-11-06T11:14:09+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-ryan-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-ryan-1-raw.mp3", "seconds": 2.8, "created": "2026-11-06T11:14:09+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-derek-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-derek-1-raw.mp3", "seconds": 2.8, "created": "2026-11-06T11:14:11+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-tyler-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-tyler-1-raw.mp3", "seconds": 2.7, "created": "2026-11-06T11:14:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/019_phrase_my_full_name/en/nat-toby-1.mp3", "raw": "takes/019_phrase_my_full_name/en/nat-toby-1-raw.mp3", "seconds": 2.9, "created": "2026-11-06T11:14:13+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 4.6, "created": "2026-11-06T11:15:46+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/nat-tomas-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/nat-tomas-1-raw.mp3", "seconds": 3.9, "created": "2026-11-06T11:15:48+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/nat-dante-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/nat-dante-1-raw.mp3", "seconds": 3.9, "created": "2026-11-06T11:15:49+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/nat-nikolas-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/nat-nikolas-1-raw.mp3", "seconds": 3.9, "created": "2026-11-06T11:15:50+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/nat-bautista-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/nat-bautista-1-raw.mp3", "seconds": 4.0, "created": "2026-11-06T11:15:52+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/nat-masy-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/nat-masy-1-raw.mp3", "seconds": 3.8, "created": "2026-11-06T11:15:52+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/019_phrase_my_full_name/es-AR/nat-malena-1.mp3", "raw": "takes/019_phrase_my_full_name/es-AR/nat-malena-1-raw.mp3", "seconds": 3.9, "created": "2026-11-06T11:15:53+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "yo_me_llamo": {"ru": {"source": [{"n": 1, "src": "takes/yo_me_llamo/ru/source-1.mp3", "raw": null, "created": "2026-10-23T09:47:37+00:00", "origin": "первый прогон стенда", "status": "done", "seconds": 1.9}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 1.7, "created": "2026-11-06T11:15:54+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/nat-tomas-1.mp3", "raw": "takes/yo_me_llamo/es-AR/nat-tomas-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:55+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/nat-dante-1.mp3", "raw": "takes/yo_me_llamo/es-AR/nat-dante-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:56+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/nat-nikolas-1.mp3", "raw": "takes/yo_me_llamo/es-AR/nat-nikolas-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:56+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/nat-bautista-1.mp3", "raw": "takes/yo_me_llamo/es-AR/nat-bautista-1-raw.mp3", "seconds": 1.6, "created": "2026-11-06T11:15:58+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/nat-masy-1.mp3", "raw": "takes/yo_me_llamo/es-AR/nat-masy-1-raw.mp3", "seconds": 1.4, "created": "2026-11-06T11:15:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/yo_me_llamo/es-AR/nat-malena-1.mp3", "raw": "takes/yo_me_llamo/es-AR/nat-malena-1-raw.mp3", "seconds": 1.5, "created": "2026-11-06T11:15:59+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}, "story_park": {"ru": {"source": [{"n": 1, "src": "takes/story_park/ru/source-1.mp3", "raw": null, "seconds": 8.2, "created": "2026-10-30T16:29:17+00:00", "origin": "первый прогон «Голос старше»", "status": "done"}], "v2-v4": [{"n": 1, "src": "takes/story_park/ru/v2-v4-1.mp3", "raw": null, "seconds": 7.8, "created": "2026-11-06T11:12:04+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "v2-turbo": [{"n": 1, "src": "takes/story_park/ru/v2-turbo-1.mp3", "raw": null, "seconds": 7.9, "created": "2026-11-06T11:12:04+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "en": {"v2-v4": [{"n": 1, "src": "takes/story_park/en/v2-v4-1.mp3", "raw": null, "seconds": 7.7, "created": "2026-11-06T11:14:13+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ben": [{"n": 1, "src": "takes/story_park/en/nat-ben-1.mp3", "raw": "takes/story_park/en/nat-ben-1-raw.mp3", "seconds": 6.6, "created": "2026-11-06T11:14:17+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-julian": [{"n": 1, "src": "takes/story_park/en/nat-julian-1.mp3", "raw": "takes/story_park/en/nat-julian-1-raw.mp3", "seconds": 6.4, "created": "2026-11-06T11:14:18+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-justin": [{"n": 1, "src": "takes/story_park/en/nat-justin-1.mp3", "raw": "takes/story_park/en/nat-justin-1-raw.mp3", "seconds": 6.8, "created": "2026-11-06T11:14:18+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-brooks": [{"n": 1, "src": "takes/story_park/en/nat-brooks-1.mp3", "raw": "takes/story_park/en/nat-brooks-1-raw.mp3", "seconds": 6.6, "created": "2026-11-06T11:14:21+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-eddie": [{"n": 1, "src": "takes/story_park/en/nat-eddie-1.mp3", "raw": "takes/story_park/en/nat-eddie-1-raw.mp3", "seconds": 6.6, "created": "2026-11-06T11:14:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-kaelen": [{"n": 1, "src": "takes/story_park/en/nat-kaelen-1.mp3", "raw": "takes/story_park/en/nat-kaelen-1-raw.mp3", "seconds": 6.9, "created": "2026-11-06T11:14:23+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-caleb": [{"n": 1, "src": "takes/story_park/en/nat-caleb-1.mp3", "raw": "takes/story_park/en/nat-caleb-1-raw.mp3", "seconds": 6.3, "created": "2026-11-06T11:14:26+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-colton": [{"n": 1, "src": "takes/story_park/en/nat-colton-1.mp3", "raw": "takes/story_park/en/nat-colton-1-raw.mp3", "seconds": 6.7, "created": "2026-11-06T11:14:27+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-lawrence": [{"n": 1, "src": "takes/story_park/en/nat-lawrence-1.mp3", "raw": "takes/story_park/en/nat-lawrence-1-raw.mp3", "seconds": 6.5, "created": "2026-11-06T11:14:27+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-ryan": [{"n": 1, "src": "takes/story_park/en/nat-ryan-1.mp3", "raw": "takes/story_park/en/nat-ryan-1-raw.mp3", "seconds": 6.1, "created": "2026-11-06T11:14:30+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-derek": [{"n": 1, "src": "takes/story_park/en/nat-derek-1.mp3", "raw": "takes/story_park/en/nat-derek-1-raw.mp3", "seconds": 6.6, "created": "2026-11-06T11:14:32+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tyler": [{"n": 1, "src": "takes/story_park/en/nat-tyler-1.mp3", "raw": "takes/story_park/en/nat-tyler-1-raw.mp3", "seconds": 6.6, "created": "2026-11-06T11:14:32+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-toby": [{"n": 1, "src": "takes/story_park/en/nat-toby-1.mp3", "raw": "takes/story_park/en/nat-toby-1-raw.mp3", "seconds": 7.2, "created": "2026-11-06T11:14:34+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}, "es-AR": {"v2-v4": [{"n": 1, "src": "takes/story_park/es-AR/v2-v4-1.mp3", "raw": null, "seconds": 8.8, "created": "2026-11-06T11:16:00+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-tomas": [{"n": 1, "src": "takes/story_park/es-AR/nat-tomas-1.mp3", "raw": "takes/story_park/es-AR/nat-tomas-1-raw.mp3", "seconds": 7.1, "created": "2026-11-06T11:16:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-dante": [{"n": 1, "src": "takes/story_park/es-AR/nat-dante-1.mp3", "raw": "takes/story_park/es-AR/nat-dante-1-raw.mp3", "seconds": 7.5, "created": "2026-11-06T11:16:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-nikolas": [{"n": 1, "src": "takes/story_park/es-AR/nat-nikolas-1.mp3", "raw": "takes/story_park/es-AR/nat-nikolas-1-raw.mp3", "seconds": 7.8, "created": "2026-11-06T11:16:06+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-bautista": [{"n": 1, "src": "takes/story_park/es-AR/nat-bautista-1.mp3", "raw": "takes/story_park/es-AR/nat-bautista-1-raw.mp3", "seconds": 7.7, "created": "2026-11-06T11:16:10+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-masy": [{"n": 1, "src": "takes/story_park/es-AR/nat-masy-1.mp3", "raw": "takes/story_park/es-AR/nat-masy-1-raw.mp3", "seconds": 6.9, "created": "2026-11-06T11:16:10+00:00", "origin": "первый прогон стенда v2", "status": "done"}], "nat-malena": [{"n": 1, "src": "takes/story_park/es-AR/nat-malena-1.mp3", "raw": "takes/story_park/es-AR/nat-malena-1-raw.mp3", "seconds": 7.3, "created": "2026-11-06T11:16:12+00:00", "origin": "первый прогон стенда v2", "status": "done"}]}}}, "sandbox": [], "source": {"voice_id": "E2GETHw1vl7pZzdRefEl", "name": "seva-child-1-Seva"}, "models": {"eleven": "eleven_v4", "sts": "eleven_multilingual_sts_v2", "openai": "gpt-4o-mini-tts", "openai_voices": {"openai-sts": "coral", "openai-male-sts": "ballad"}, "voxtral": "voxtral-mini-tts-3-0"}, "sections": [{"id": "clone", "title": "Новый клон", "langs": ["ru"], "columns": {"ru": ["v2-v4", "v2-turbo", "source"]}, "reference": "v2-v4", "intro": "Новый клон Севы по свежей записи — на русском, на моделях ElevenLabs eleven_v4 и eleven_v4_turbo. Для сравнения рядом старый клон от 24.07, которым сейчас озвучены книги.", "methods": [{"title": "Новый клон · v4", "steps": ["06.11.2026 в ElevenLabs сделан клон Instant Voice Cloning <span class='mono'>Seva V2<\/span> (<span class='mono'>0FXhuixrY6VCBdNomNTR<\/span>) по новой записи Севы — 34 с по-русски, одна запись.", "Фраза озвучивается этим клоном на <span class='mono'>eleven_v4<\/span> с языком фразы, stability 0.5, similarity 0.9 — как в книгах приложения."]}, {"title": "Новый клон · v4 Turbo", "steps": ["Тот же клон Seva V2 и те же настройки.", "Модель <span class='mono'>eleven_v4_turbo<\/span> — быстрая версия v4 для живого диалога, с тем же набором языков."]}, {"title": "Старый клон · v4", "steps": ["Клон <span class='mono'>seva-child-1-Seva<\/span> от 24.07.2026 по трём записям Севы (~32 с) на eleven_v4 — им сейчас озвучены книги. Здесь только для сравнения."]}]}, {"id": "transfer", "title": "Перенос: носитель", "langs": ["en", "es-AR"], "columns": {"en": ["v2-v4", "nat-ben", "nat-julian", "nat-justin", "nat-brooks", "nat-eddie", "nat-kaelen", "nat-caleb", "nat-colton", "nat-lawrence", "nat-ryan", "nat-derek", "nat-tyler", "nat-toby"], "es-AR": ["v2-v4", "nat-tomas", "nat-dante", "nat-nikolas", "nat-bautista", "nat-masy", "nat-malena"]}, "reference": "v2-v4", "intro": "Каждую фразу читает носитель языка, а Speech-to-Speech переносит на запись тембр нового клона Севы: произношение и интонация остаются от носителя. Первая колонка — новый клон напрямую, без переноса.", "methods": [{"title": "Новый клон · v4", "steps": ["Клон Seva V2 сам читает фразу на английском или испанском на eleven_v4 с языком фразы — как озвучка книг сейчас. От этой колонки считаются замеры."]}, {"title": "Перенос: носитель", "steps": ["Клона под язык нет. Фразу читает носитель — готовый голос из библиотеки ElevenLabs — на eleven_v4 с языком фразы.", "Speech-to-Speech <span class='mono'>eleven_multilingual_sts_v2<\/span> переносит на запись тембр нового клона Seva V2.", "В окне дублей у каждой ячейки есть запись носителя до переноса — слышно, что перенос сохранил."]}], "natives_note": {"en": "Английские голоса — список специалиста.", "es-AR": "Аргентинские голоса выбраны стендом: молодые мужские с риоплатским акцентом из библиотеки ElevenLabs (своего списка специалист не дал). Malena — носитель первой версии стенда."}}], "natives": {"en": [{"key": "nat-ben", "voice_id": "duTgFVzDLeGav17YDHYo", "name": "Ben", "about": "Vibrant and High-Energy"}, {"key": "nat-julian", "voice_id": "5PEXwsADjqmz7GO58o3B", "name": "Julian", "about": "Raspy, Dramatic and Well-spoken"}, {"key": "nat-justin", "voice_id": "mBqbvkxIFe5HjjaoiN4P", "name": "Justin", "about": "Approachable Support"}, {"key": "nat-brooks", "voice_id": "sUzXYdokj3o9QQ91yPRF", "name": "Brooks", "about": "Bright and Affable"}, {"key": "nat-eddie", "voice_id": "l7kNoIfnJKPg7779LI2t", "name": "Eddie", "about": "Natural and Helpful"}, {"key": "nat-kaelen", "voice_id": "10NkTYmU7tSz3Kkl3Lex", "name": "Kaelen", "about": "Amateur Warrior"}, {"key": "nat-caleb", "voice_id": "AaOhDHYJ1XLZk74lXhdE", "name": "Caleb", "about": "Trusted Guide"}, {"key": "nat-colton", "voice_id": "WQrm3GCViBYCRcDRlTeP", "name": "Colton", "about": "Confident and Clear"}, {"key": "nat-lawrence", "voice_id": "ktkP7Nsj67dw2zcplQYt", "name": "Lawrence", "about": "Bright and Informative"}, {"key": "nat-ryan", "voice_id": "e243k3NwaO5uqjBb8yKV", "name": "Ryan", "about": "Upbeat and Reassuring"}, {"key": "nat-derek", "voice_id": "E5vwBa1swCEXshQFkLEu", "name": "Derek", "about": "Helpful and Patient"}, {"key": "nat-tyler", "voice_id": "I1ejplf72DWHJzwAiw4n", "name": "Tyler", "about": "Upbeat and Helpful"}, {"key": "nat-toby", "voice_id": "Z750C5Od5qXCE2K3aYgR", "name": "Toby", "about": "Bright and Earnest"}], "es-AR": [{"key": "nat-tomas", "voice_id": "QK4xDwo9ESPHA4JNUpX3", "name": "Tomas", "about": "Argentina & Uruguaya — «лучший голос Рио-де-ла-Платы»"}, {"key": "nat-dante", "voice_id": "DzZyY3xqjLUXGaT9wykC", "name": "Dante", "about": "Clear, Expressive, Natural — риоплатский"}, {"key": "nat-nikolas", "voice_id": "PadrefepT3XCgwEQJiux", "name": "Nikolas Kafka", "about": "Friendly and Clear — разговорный аргентинский"}, {"key": "nat-bautista", "voice_id": "Hw05DSJqSd5iZ9AswbcE", "name": "Bautista", "about": "Smooth and Articulated — стандартный аргентинский"}, {"key": "nat-masy", "voice_id": "x6gcQQnht9kyuC1BTUOM", "name": "Masy", "about": "Conversational, Expressive — аргентинский"}, {"key": "nat-malena", "voice_id": "p7AwDmKvTdoHTBuueGvP", "name": "Malena", "about": "женский, риоплатский — носитель первой версии стенда"}]}, "measures": {"clone": {"ru": {"v2-v4": {"pitch": 254, "centroid": 1588, "seconds": 25.6, "recognized": 11, "phrases": 12}, "v2-turbo": {"pitch": 254, "centroid": 1580, "seconds": 26.1, "recognized": 7, "phrases": 12}, "source": {"pitch": 302, "centroid": 2140, "seconds": 25.9, "recognized": 7, "phrases": 12}}}, "transfer": {"en": {"v2-v4": {"pitch": 258, "centroid": 1585, "seconds": 25.5, "recognized": 9, "phrases": 12}, "nat-ben": {"pitch": 258, "centroid": 1725, "seconds": 21.4, "recognized": 8, "phrases": 12}, "nat-julian": {"pitch": 246, "centroid": 1804, "seconds": 20.9, "recognized": 10, "phrases": 12}, "nat-justin": {"pitch": 258, "centroid": 1784, "seconds": 22.0, "recognized": 8, "phrases": 12}, "nat-brooks": {"pitch": 254, "centroid": 1734, "seconds": 22.0, "recognized": 8, "phrases": 12}, "nat-eddie": {"pitch": 235, "centroid": 1689, "seconds": 22.4, "recognized": 8, "phrases": 12}, "nat-kaelen": {"pitch": 219, "centroid": 1479, "seconds": 22.5, "recognized": 9, "phrases": 12}, "nat-caleb": {"pitch": 235, "centroid": 1556, "seconds": 21.5, "recognized": 9, "phrases": 12}, "nat-colton": {"pitch": 250, "centroid": 1750, "seconds": 22.2, "recognized": 8, "phrases": 12}, "nat-lawrence": {"pitch": 250, "centroid": 1693, "seconds": 22.0, "recognized": 9, "phrases": 12}, "nat-ryan": {"pitch": 250, "centroid": 1622, "seconds": 20.6, "recognized": 8, "phrases": 12}, "nat-derek": {"pitch": 242, "centroid": 1656, "seconds": 21.7, "recognized": 8, "phrases": 12}, "nat-tyler": {"pitch": 239, "centroid": 1573, "seconds": 21.8, "recognized": 9, "phrases": 12}, "nat-toby": {"pitch": 235, "centroid": 1591, "seconds": 23.7, "recognized": 8, "phrases": 12}}, "es-AR": {"v2-v4": {"pitch": 235, "centroid": 1508, "seconds": 29.3, "recognized": 9, "phrases": 13}, "nat-tomas": {"pitch": 211, "centroid": 1431, "seconds": 24.3, "recognized": 6, "phrases": 13}, "nat-dante": {"pitch": 225, "centroid": 1630, "seconds": 25.5, "recognized": 8, "phrases": 13}, "nat-nikolas": {"pitch": 222, "centroid": 1516, "seconds": 25.3, "recognized": 7, "phrases": 13}, "nat-bautista": {"pitch": 216, "centroid": 1533, "seconds": 24.8, "recognized": 7, "phrases": 13}, "nat-masy": {"pitch": 216, "centroid": 1449, "seconds": 22.9, "recognized": 8, "phrases": 13}, "nat-malena": {"pitch": 229, "centroid": 1489, "seconds": 23.5, "recognized": 5, "phrases": 13}}}}, "limits": {"max_text": 300}, "rubberband": true, "offline_date": "06.11.2026", "static": true};
+// В файле для отправки звук вшит сюда (base64 по пути записи), сервера нет:
+// перегенерации и песочницы в нём нет.
+const AUDIO = null;
+// Статичный сайт (GitHub Pages): звук отдельными файлами рядом, сервера тоже нет.
+const STATIC = Boolean(DATA.static);
+const OFFLINE = Boolean(AUDIO) || STATIC;
+const GROUPS = [
+  { key: "prompt", title: "Приглашения аватара" },
+  { key: "word", title: "Слова" },
+  { key: "phrase", title: "Фразы" },
+  { key: "question", title: "Вопросы" },
+];
+const SPEED = { min: 0.5, max: 1.5, step: 0.05, default: 0.8 };
+const SPEEDS_KEY = "voice-stand-speeds-v2";
+const PICKS_KEY = "voice-stand-picks";
+const PLAY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.2v9.6L10.5 6z"/></svg>';
+const STOP_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1"/></svg>';
+const VARIANT = Object.fromEntries(DATA.variants.map((variant) => [variant.key, variant]));
+const LANG = Object.fromEntries(DATA.languages.map((language) => [language.code, language]));
+
+// Таблицы строятся по разделам стенда (DATA.sections): у каждого раздела
+// свои языки и колонки.
+const INFO = VARIANT;
+const TABLES = Object.fromEntries(DATA.sections.map((section) => [section.id, {
+  id: section.id + "-grid", switchId: section.id + "-switch", langs: section.langs, lang: section.langs[0],
+  info: VARIANT, groups: [{ key: "story", title: "Рассказ" }, ...GROUPS], keys: (code) => section.columns[code],
+  onLang: () => renderSectionNotes(section),
+}]));
+const speeds = load(SPEEDS_KEY, { global: SPEED.default, blocks: {}, phrases: {} });
+const picks = load(PICKS_KEY, {});
+
+function load(key, fallback) {
+  try { return Object.assign(fallback, JSON.parse(localStorage.getItem(key)) || {}); } catch { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+function el(tag, attrs = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [name, value] of Object.entries(attrs)) {
+    if (value === undefined || value === null || value === false) continue;
+    if (name === "text") node.textContent = value;
+    else if (name === "html") node.innerHTML = value;
+    else node.setAttribute(name, value === true ? "" : value);
+  }
+  for (const child of children) if (child) node.append(child);
+  return node;
+}
+const blobs = {};
+function audioUrl(src) {
+  if (!AUDIO) return "audio/" + src;
+  // base64 разворачивается в Blob только когда запись впервые нужна.
+  const file = AUDIO.files[AUDIO.paths[src]];
+  if (!blobs[src] && file) {
+    const binary = atob(file);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    blobs[src] = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+  }
+  return blobs[src] || "";
+}
+function seconds(value) { return value == null ? "" : value.toFixed(1).replace(".", ",") + " с"; }
+function formatSpeed(value) { return value.toFixed(2).replace(".", ",") + "×"; }
+function when(iso) {
+  return new Date(iso).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+// ——— скорость: фраза → раздел → общая ———
+function speedFor(scope) {
+  if (!scope) return speeds.global;
+  return speeds.phrases[scope.phrase] ?? speeds.blocks[scope.block] ?? speeds.global;
+}
+function speedOptions(select, value, inheritLabel) {
+  select.replaceChildren(el("option", { value: "", text: inheritLabel }));
+  for (let v = SPEED.min; v <= SPEED.max + 1e-9; v += SPEED.step) {
+    const rounded = Math.round(v * 100) / 100;
+    select.append(el("option", { value: String(rounded), text: formatSpeed(rounded) }));
+  }
+  select.value = value == null ? "" : String(value);
+}
+function refreshSpeeds() {
+  save(SPEEDS_KEY, speeds);
+  document.getElementById("speed-global").value = String(speeds.global);
+  document.getElementById("speed-global-value").textContent = formatSpeed(speeds.global);
+  for (const select of document.querySelectorAll("select[data-block-speed]")) {
+    select.options[0].textContent = "как общая (" + formatSpeed(speeds.global) + ")";
+  }
+  for (const select of document.querySelectorAll("select[data-phrase-speed]")) {
+    const block = select.dataset.block;
+    select.options[0].textContent = "скорость: по разделу, " + formatSpeed(speeds.blocks[block] ?? speeds.global);
+  }
+  for (const button of document.querySelectorAll(".play[data-seconds]")) {
+    const time = button.querySelector(".time");
+    if (time) time.textContent = seconds(Number(button.dataset.seconds) / speedFor(scopeOf(button)));
+  }
+  if (current) player.playbackRate = speedFor(scopeOf(current));
+}
+function scopeOf(button) {
+  return button.dataset.phrase ? { phrase: button.dataset.phrase, block: button.dataset.block } : null;
+}
+
+// ——— плеер ———
+const player = new Audio();
+player.preservesPitch = true;
+player.webkitPreservesPitch = true;
+let current = null;
+let queue = [];
+function setIcon(button, playing) {
+  button.querySelector(".icon").innerHTML = playing ? STOP_ICON : PLAY_ICON;
+  button.classList.toggle("is-playing", playing);
+}
+function markCurrent(button) {
+  for (const node of document.querySelectorAll(".is-current")) node.classList.remove("is-current");
+  const cell = button?.closest("td[data-variant]");
+  if (!cell) return;
+  cell.closest("tr").classList.add("is-current");
+  cell.closest("table").querySelector('thead th[data-variant="' + cell.dataset.variant + '"]')?.classList.add("is-current");
+}
+function stop() {
+  queue = [];
+  player.pause();
+  if (current) setIcon(current, false);
+  current = null;
+  markCurrent(null);
+}
+function start(button) {
+  if (current) setIcon(current, false);
+  current = button;
+  setIcon(button, true);
+  markCurrent(button);
+  player.src = audioUrl(button.dataset.src);
+  const speed = speedFor(scopeOf(button));
+  player.defaultPlaybackRate = speed;
+  player.playbackRate = speed;
+  player.play().catch(stop);
+}
+player.addEventListener("ended", () => {
+  if (current) setIcon(current, false);
+  current = null;
+  markCurrent(null);
+  const next = queue.shift();
+  if (next) setTimeout(() => start(next), 350);
+});
+function playButton(src, { label, caption, aria, method, mini, scope, secondsValue } = {}) {
+  if (!src) return el("span", { class: "empty", text: "—" });
+  const button = el("button", { type: "button", class: "play" + (method ? " method" : "") + (mini ? " mini" : ""), "aria-label": aria || label || "Слушать" });
+  button.dataset.src = src;
+  if (scope) { button.dataset.phrase = scope.phrase; button.dataset.block = scope.block; }
+  button.append(el("span", { class: "icon", html: PLAY_ICON }));
+  if (label) button.append(el("span", { class: "label", text: label }));
+  if (caption) button.append(el("span", { class: "caption", text: caption }));
+  if (secondsValue != null) {
+    button.dataset.seconds = secondsValue;
+    button.append(el("span", { class: "time", text: seconds(secondsValue / speedFor(scope)) }));
+  }
+  button.addEventListener("click", () => {
+    if (current === button) { stop(); return; }
+    queue = [];
+    start(button);
+  });
+  return button;
+}
+
+// ——— дубли ———
+function takesOf(phrase, language, variant) {
+  return DATA.takes?.[phrase]?.[language]?.[variant] || [];
+}
+function pickedTake(phrase, language, variant) {
+  const done = takesOf(phrase, language, variant).filter((take) => take.status !== "error" && take.src);
+  const wanted = picks[[phrase, language, variant].join("|")];
+  return done.find((take) => take.n === wanted) || done[done.length - 1] || null;
+}
+
+// ——— таблицы ———
+// На странице две таблицы фраз — «Голос старше» и «Акцент», у каждой свой
+// язык, свои колонки и свои подписи вариантов.
+function renderSwitch(table) {
+  const switcher = document.getElementById(table.switchId);
+  switcher.replaceChildren();
+  for (const code of table.langs) {
+    const tab = el("button", { type: "button", role: "tab", "aria-selected": String(code === table.lang), text: LANG[code].title });
+    tab.addEventListener("click", () => {
+      table.lang = code;
+      stop();
+      renderSwitch(table);
+      renderGrid(table);
+      table.onLang?.();
+    });
+    switcher.append(tab);
+  }
+}
+
+function renderAllGrids() {
+  for (const table of Object.values(TABLES)) renderGrid(table);
+}
+
+function renderGrid(table) {
+  const language = table.lang;
+  const keys = table.keys(language);
+  const matrix = el("table", { class: "matrix" });
+  const head = el("tr", {}, [el("th", { class: "phrase-cell", scope: "col", text: "Фраза" })]);
+  let family = null;
+  for (const key of keys) {
+    const variant = table.info[key];
+    head.append(el("th", { scope: "col", "data-variant": key, class: variant.family !== family ? "family-start" : null }, [
+      el("span", { class: "family", text: variant.family }), document.createTextNode(variant.title),
+    ]));
+    family = variant.family;
+  }
+  head.append(el("th", { scope: "col", class: "family-start", text: "Все подряд" }));
+  matrix.append(el("thead", {}, [head]));
+
+  const seen = new Set();
+  for (const group of table.groups) {
+    const phrases = DATA.phrases.filter((phrase) => {
+      if (phrase.group !== group.key || !phrase.texts[language] || seen.has(phrase.texts[language])) return false;
+      seen.add(phrase.texts[language]);
+      return true;
+    });
+    if (!phrases.length) continue;
+    const block = language + ":" + group.key;
+    const select = el("select", { id: table.id + "-speed-" + block.replace(/[^a-z0-9]+/gi, "-"), "data-block-speed": "" });
+    speedOptions(select, speeds.blocks[block], "как общая");
+    select.addEventListener("change", () => {
+      if (select.value) speeds.blocks[block] = Number(select.value); else delete speeds.blocks[block];
+      refreshSpeeds();
+    });
+    const body = el("tbody", {}, [
+      el("tr", { class: "group" }, [
+        el("th", { colspan: String(keys.length + 2), scope: "rowgroup" }, [
+          el("div", { class: "group-inner" }, [
+            el("h3", { text: group.title }),
+            el("label", { class: "speed", for: select.id, text: "Скорость раздела" }), select,
+          ]),
+        ]),
+      ]),
+    ]);
+    for (const phrase of phrases) body.append(phraseRow(table, phrase, block, keys));
+    matrix.append(body);
+  }
+  document.getElementById(table.id).replaceChildren(matrix);
+  refreshSpeeds();
+}
+
+function phraseRow(table, phrase, block, keys) {
+  const language = table.lang;
+  const scope = { phrase: language + ":" + phrase.key, block };
+  const row = el("tr", { class: "phrase-row", "data-phrase": phrase.key });
+  const ruTake = language === "ru" ? null : pickedTake(phrase.key, "ru", "source");
+  const select = el("select", {
+    id: table.id + "-speed-" + scope.phrase.replace(/[^a-z0-9]+/gi, "-"), "data-phrase-speed": "", "data-block": block,
+    "aria-label": "Скорость фразы «" + phrase.texts[language] + "»",
+  });
+  speedOptions(select, speeds.phrases[scope.phrase], "скорость: по разделу");
+  select.addEventListener("change", () => {
+    if (select.value) speeds.phrases[scope.phrase] = Number(select.value); else delete speeds.phrases[scope.phrase];
+    refreshSpeeds();
+  });
+  row.append(el("th", { class: "phrase-cell", scope: "row" }, [
+    el("div", { class: "phrase" }, [
+      el("span", { class: "target", lang: language, text: phrase.texts[language] }),
+      language === "ru" ? null : el("span", { class: "ru" }, [
+        el("span", { text: phrase.texts.ru }),
+        ruTake ? playButton(ruTake.src, { mini: true, scope, secondsValue: ruTake.seconds, aria: "Исходный по-русски: " + phrase.texts.ru }) : null,
+      ]),
+      el("span", { class: "own-speed" }, [select]),
+    ]),
+  ]));
+
+  const buttons = [];
+  let family = null;
+  for (const key of keys) {
+    const variant = table.info[key];
+    const take = pickedTake(phrase.key, language, key);
+    const button = playButton(take?.src, {
+      method: key !== "source", scope, secondsValue: take?.seconds,
+      aria: variant.title + ", дубль " + (take?.n ?? "—") + ": " + phrase.texts[language],
+    });
+    if (button.tagName === "BUTTON") buttons.push(button);
+    const startsFamily = variant.family !== family;
+    family = variant.family;
+    row.append(el("td", { "data-variant": key, class: startsFamily ? "family-start" : null }, [
+      el("div", { class: "cell" }, [button, takesButton(table, phrase, key)]),
+    ]));
+  }
+  const series = el("button", { type: "button", class: "play series", "aria-label": "Все варианты подряд: " + phrase.texts[language] }, [
+    el("span", { class: "icon", html: PLAY_ICON }), el("span", { text: "Подряд" }),
+  ]);
+  series.addEventListener("click", () => {
+    stop();
+    queue = buttons.slice(1);
+    if (buttons[0]) start(buttons[0]);
+  });
+  row.append(el("td", { class: "family-start" }, [series]));
+  return row;
+}
+
+function takesButton(table, phrase, key) {
+  const all = takesOf(phrase.key, table.lang, key);
+  const busy = all.some((take) => take.status === "running");
+  const done = all.filter((take) => take.src).length;
+  const picked = pickedTake(phrase.key, table.lang, key);
+  const single = OFFLINE ? "1 дубль" : "↻ " + done;
+  const button = el("button", {
+    type: "button", class: "takes" + (busy ? " busy" : ""),
+    text: busy ? "… дубль" : (done > 1 ? picked.n + " из " + done : single),
+    "aria-label": (OFFLINE ? "Дубли: " : "Дубли и перегенерация: ") + table.info[key].title + ", " + phrase.texts[table.lang],
+  });
+  button.addEventListener("click", () => openTakes(table, phrase, key));
+  return button;
+}
+
+// ——— окно дублей ———
+const dialog = document.getElementById("takes-dialog");
+let opened = null;
+document.getElementById("takes-close").addEventListener("click", () => dialog.close());
+dialog.addEventListener("close", () => { opened = null; });
+
+function openTakes(table, phrase, key) {
+  opened = { table, phrase, key, lang: table.lang };
+  document.getElementById("takes-title").textContent = table.info[key].title + " · " + LANG[table.lang].title;
+  document.getElementById("takes-phrase").textContent = phrase.texts[table.lang];
+  document.getElementById("takes-status").textContent = "";
+  renderTakes();
+  if (!dialog.open) dialog.showModal();
+}
+
+function renderTakes() {
+  if (!opened) return;
+  const { phrase, key, table } = opened;
+  const caption = table.info[key].raw_caption || "до переноса";
+  const scope = { phrase: opened.lang + ":" + phrase.key, block: opened.lang + ":" + phrase.group };
+  const list = document.getElementById("takes-list");
+  list.replaceChildren();
+  const all = takesOf(phrase.key, opened.lang, key);
+  const picked = pickedTake(phrase.key, opened.lang, key);
+  for (const take of [...all].reverse()) {
+    const item = el("div", { class: "take" + (picked && take.n === picked.n ? " picked" : "") });
+    item.append(el("strong", { text: "Дубль " + take.n }));
+    if (take.src) {
+      item.append(playButton(take.src, { method: true, scope, secondsValue: take.seconds, aria: "Дубль " + take.n }));
+      if (take.raw) item.append(playButton(take.raw, { mini: true, caption, scope, aria: "Дубль " + take.n + ", " + caption }));
+      const id = "pick-" + take.n;
+      const radio = el("input", { type: "radio", name: "pick", id, checked: picked && take.n === picked.n });
+      radio.addEventListener("change", () => {
+        picks[[phrase.key, opened.lang, key].join("|")] = take.n;
+        save(PICKS_KEY, picks);
+        renderTakes();
+        renderAllGrids();
+      });
+      item.append(el("label", { for: id }, [radio, document.createTextNode("играть в таблице")]));
+    } else if (take.status === "running") {
+      item.append(el("span", { class: "meta", text: "озвучивается…" }));
+    }
+    item.append(el("span", { class: "meta", text: when(take.created) + " · " + take.origin }));
+    if (take.error) item.append(el("span", { class: "error", text: take.error }));
+    list.append(item);
+  }
+}
+
+document.getElementById("takes-new").addEventListener("click", async () => {
+  if (!opened) return;
+  const { phrase, key } = opened;
+  const status = document.getElementById("takes-status");
+  const button = document.getElementById("takes-new");
+  button.disabled = true;
+  status.className = "status";
+  status.textContent = "Озвучиваю новый дубль…";
+  try {
+    const started = await post("api/regenerate", { phrase: phrase.key, lang: opened.lang, variant: key });
+    await refreshState();
+    renderTakes();
+    renderAllGrids();
+    await waitJob(started.job_id);
+    await refreshState();
+    status.textContent = "Готово: дубль " + started.take + ".";
+  } catch (error) {
+    status.className = "status error";
+    status.textContent = error.message;
+    await refreshState();
+  } finally {
+    button.disabled = false;
+    renderTakes();
+    renderAllGrids();
+  }
+});
+
+// ——— сервер ———
+async function post(url, body) {
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Сервер ответил ошибкой " + response.status + ".");
+  return data;
+}
+async function waitJob(id, onTick) {
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const response = await fetch("api/jobs/" + id);
+    if (!response.ok) throw new Error("Задание потерялось — возможно, сервер перезапустился.");
+    const job = await response.json();
+    if (onTick) await onTick(job);
+    if (job.status !== "running") return job;
+  }
+}
+async function refreshState() {
+  const response = await fetch("api/state");
+  if (!response.ok) return;
+  const state = await response.json();
+  DATA.takes = state.takes;
+  DATA.sandbox = state.sandbox;
+}
+
+// ——— песочница ———
+const sandboxLang = document.getElementById("sandbox-lang");
+const sandboxText = document.getElementById("sandbox-text");
+sandboxText.maxLength = DATA.limits.max_text;
+for (const language of DATA.languages) sandboxLang.append(el("option", { value: language.code, text: language.title }));
+sandboxLang.value = "en";
+sandboxLang.addEventListener("change", renderSandboxVariants);
+sandboxText.addEventListener("input", () => {
+  document.getElementById("sandbox-count").textContent = sandboxText.value.length + " / " + DATA.limits.max_text;
+});
+
+function renderSandboxVariants() {
+  const box = document.getElementById("sandbox-variants");
+  box.replaceChildren();
+  const keys = [...new Set(DATA.sections.flatMap((section) => section.columns[sandboxLang.value] || []))];
+  for (const key of keys) {
+    const id = "sandbox-" + key;
+    box.append(el("label", { for: id }, [
+      el("input", { type: "checkbox", id, value: key, checked: true }),
+      document.createTextNode(VARIANT[key].title),
+    ]));
+  }
+}
+
+document.getElementById("sandbox-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const status = document.getElementById("sandbox-status");
+  const submit = document.getElementById("sandbox-submit");
+  const variants = [...document.querySelectorAll("#sandbox-variants input:checked")].map((input) => input.value);
+  submit.disabled = true;
+  status.className = "status";
+  status.textContent = "Озвучиваю " + variants.length + " вариантами…";
+  try {
+    const started = await post("api/sandbox", { text: sandboxText.value, lang: sandboxLang.value, variants });
+    await refreshState();
+    renderRuns();
+    await waitJob(started.job_id, async (job) => {
+      const left = Object.values(job.items).filter((item) => item.status === "pending" || item.status === "running").length;
+      status.textContent = left ? "Осталось вариантов: " + left : "Готово.";
+      await refreshState();
+      renderRuns();
+    });
+    status.textContent = "Готово.";
+  } catch (error) {
+    status.className = "status error";
+    status.textContent = error.message;
+  } finally {
+    submit.disabled = false;
+    await refreshState();
+    renderRuns();
+  }
+});
+
+function renderRuns() {
+  const box = document.getElementById("runs");
+  box.replaceChildren();
+  if (!DATA.sandbox.length) {
+    box.append(el("p", { class: "note", text: "Пока пусто. Озвученные здесь фразы сохраняются на сервере и видны всем, кто открывает стенд." }));
+    return;
+  }
+  for (const run of DATA.sandbox) {
+    const grid = el("div", { class: "run-grid" });
+    for (const key of Object.keys(INFO)) {
+      const result = run.results[key];
+      if (!result) continue;
+      const caption = INFO[key].raw_caption || "до переноса";
+      const item = el("div", { class: "run-item" }, [el("span", { class: "name", text: INFO[key].title })]);
+      if (result.status === "done") {
+        const line = el("div", { class: "cell" }, [playButton(result.src, { method: key !== "source", aria: INFO[key].title + ": " + run.text })]);
+        if (result.raw) line.append(playButton(result.raw, { mini: true, caption, aria: INFO[key].title + ", " + caption }));
+        item.append(line);
+      } else if (result.status === "error") {
+        item.append(el("span", { class: "error", text: result.error }));
+      } else {
+        item.append(el("span", { class: "status", text: "озвучивается…" }));
+      }
+      grid.append(item);
+    }
+    box.append(el("article", { class: "run" }, [
+      el("div", { class: "run-head" }, [
+        el("span", { class: "run-text", lang: run.lang, text: run.text }),
+        el("span", { class: "muted", text: LANG[run.lang].title + " · " + when(run.created) }),
+      ]),
+      grid,
+    ]));
+  }
+}
+
+// ——— разделы: шапка, замеры, носители, как получено ———
+function percent(value, base) {
+  if (value == null || base == null) return null;
+  return Math.round((value / base - 1) * 100);
+}
+function signed(value) {
+  if (value == null) return "—";
+  return (value > 0 ? "+" : value < 0 ? "−" : "±") + Math.abs(value) + "%";
+}
+
+function buildSections() {
+  const box = document.getElementById("sections");
+  for (const section of DATA.sections) {
+    box.append(el("section", { id: section.id, "aria-labelledby": section.id + "-title" }, [
+      el("div", { class: "section-head" }, [
+        el("h2", { id: section.id + "-title", text: section.title }),
+        el("div", { class: "switch", role: "tablist", "aria-label": "Язык раздела «" + section.title + "»", id: section.id + "-switch" }),
+      ]),
+      el("p", { class: "note", text: section.intro }),
+      el("div", { class: "matrix-wrap", id: section.id + "-grid" }),
+      el("div", { class: "findings", id: section.id + "-findings" }),
+      el("h3", { text: "Как получен каждый вариант" }),
+      el("div", { class: "methods", id: section.id + "-methods" }),
+    ]));
+  }
+}
+
+function renderSectionNotes(section) {
+  const language = TABLES[section.id].lang;
+  const measures = DATA.measures?.[section.id]?.[language] || {};
+  const base = measures[section.reference] || {};
+  const rows = section.columns[language].map((key) => {
+    const value = measures[key] || {};
+    const reference = key === section.reference;
+    const pitch = percent(value.pitch, base.pitch);
+    const bright = percent(value.centroid, base.centroid);
+    const cls = (change) => change == null || reference ? null : change <= -3 ? "down" : change >= 3 ? "up" : null;
+    return el("tr", {}, [
+      el("td", { text: VARIANT[key].title }),
+      el("td", { text: value.pitch ? value.pitch + " Гц" : "—" }),
+      el("td", { class: cls(pitch), text: reference ? "" : signed(pitch) }),
+      el("td", { text: value.centroid ? value.centroid + " Гц" : "—" }),
+      el("td", { class: cls(bright), text: reference ? "" : signed(bright) }),
+      el("td", { text: reference ? "" : signed(percent(value.seconds, base.seconds)) }),
+      el("td", { text: value.phrases ? value.recognized + " из " + value.phrases : "—" }),
+    ]);
+  });
+  const findings = document.getElementById(section.id + "-findings");
+  findings.replaceChildren(el("div", { class: "measures-wrap" }, [
+    el("table", { class: "measures" }, [
+      el("caption", { class: "note", text:
+        "Замеры по всем фразам раздела, " + LANG[language].title + ", относительно колонки «" + VARIANT[section.reference].title +
+        "». Синим — заметно ниже, оранжевым — заметно выше. Спектральный центр показывает, насколько голос «светлый». «Распознано» — сколько фраз gpt-4o-transcribe расслышал дословно (совпадение слов от 85%); одиночные слова и приглашения он путает чаще, чем человек. Это ориентир, решает слух: между дублями одной фразы тон у ElevenLabs гуляет на 2–8%." }),
+      el("thead", {}, [el("tr", {}, ["Вариант", "Основной тон", "", "Спектральный центр", "", "Длительность", "Распознано"].map((text) => el("th", { scope: "col", text })))]),
+      el("tbody", {}, rows),
+    ]),
+  ]));
+  const natives = DATA.natives?.[language];
+  if (section.natives_note && natives) {
+    findings.append(el("div", { class: "natives" }, [
+      el("p", { class: "note", text: "Носители, " + LANG[language].title + ". " + section.natives_note[language] }),
+      el("ul", {}, natives.map((native) => el("li", {}, [
+        el("strong", { text: native.name }), document.createTextNode(" — " + native.about + " "),
+        el("span", { class: "mono muted", text: native.voice_id }),
+      ]))),
+    ]));
+  }
+  document.getElementById(section.id + "-methods").replaceChildren(...section.methods.map((method) => el("article", { class: "method-card" }, [
+    el("h3", { text: method.title }),
+    el("ol", {}, method.steps.map((step) => el("li", { html: step }))),
+  ])));
+}
+
+// ——— запуск ———
+const globalSpeed = document.getElementById("speed-global");
+globalSpeed.addEventListener("input", () => { speeds.global = Math.round(Number(globalSpeed.value) * 100) / 100; refreshSpeeds(); });
+document.getElementById("speed-global-reset").addEventListener("click", () => { speeds.global = SPEED.default; refreshSpeeds(); });
+
+document.getElementById("footer").append(
+  el("span", { class: "mono", text: "Исходный клон: " + DATA.source.name + " · " + DATA.source.voice_id }),
+  el("span", { class: "mono", text: "Модели: " + DATA.models.eleven + " · " + DATA.models.sts + " · " + DATA.models.openai + " · " + DATA.models.voxtral }),
+);
+buildSections();
+for (const table of Object.values(TABLES)) renderSwitch(table);
+renderAllGrids();
+for (const section of DATA.sections) renderSectionNotes(section);
+if (OFFLINE) {
+  document.getElementById("intro").textContent =
+    "Стенд на новом клоне Севы — «Seva V2», сделан 06.11.2026 по свежей записи: как он звучит по-русски на eleven_v4 и v4 Turbo и как работает «Перенос: носитель» на английском и испанском. " +
+    (STATIC ? "Это снимок стенда на " + DATA.offline_date + "." : "Это файл-снимок стенда на " + DATA.offline_date + ": весь звук внутри, интернет не нужен.") +
+    " Кнопка ▶ играет выбранный дубль, счётчик рядом открывает все дубли ячейки и записи носителя до переноса; «Подряд» проигрывает строку. Перегенерация и песочница — в серверной версии стенда.";
+  document.getElementById("sandbox").hidden = true;
+  document.getElementById("takes-new").hidden = true;
+} else {
+  renderSandboxVariants();
+  renderRuns();
+}
+</script>
+</body>
+</html>
